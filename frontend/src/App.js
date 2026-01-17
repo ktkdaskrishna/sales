@@ -26,6 +26,9 @@ import Profile from './pages/Profile';
 import Goals from './pages/Goals';
 import ActivityTimeline from './pages/ActivityTimeline';
 import TargetProgressReport from './pages/TargetProgressReport';
+import Teams from './pages/Teams';  // NEW: Team management
+import Portfolios from './pages/Portfolios';  // NEW: Portfolio management
+import Initiatives from './pages/Initiatives';  // NEW: Initiative tracking
 
 // Components
 import Layout from './components/Layout';
