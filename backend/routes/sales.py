@@ -1268,6 +1268,68 @@ async def get_opportunity_messages(
             "subtype_name": msg.get("subtype_name"),
             "author_name": msg.get("author_name", "System"),
             "author_id": msg.get("author_id"),
+
+
+
+@router.patch("/activities/{activity_id}/complete")
+async def complete_activity_with_outcome(
+    activity_id: str,
+    outcome: dict,
+    token_data: dict = Depends(require_approved())
+):
+    """
+    Mark activity as completed and record outcome.
+    Auto-updates linked initiative progress and goal progress.
+    """
+    db = Database.get_db()
+    user_id = token_data["id"]
+    now = datetime.now(timezone.utc)
+    
+    # Get activity
+    activity = await db.activities.find_one({"id": activity_id})
+    if not activity:
+        raise HTTPException(status_code=404, detail="Activity not found")
+    
+    # Update activity
+    await db.activities.update_one(
+        {"id": activity_id},
+        {
+            "$set": {
+                "status": "completed",
+                "completed_at": now,
+                "outcome": {
+                    "recorded": True,
+                    "success": outcome.get("success", True),
+                    "notes": outcome.get("notes", ""),
+                    "next_steps": outcome.get("next_steps", ""),
+                    "recorded_at": now,
+                    "recorded_by": user_id
+                },
+                "updated_at": now
+            }
+        }
+    )
+    
+    # Update linked initiative progress
+    initiative_id = activity.get("initiative_id")
+    if initiative_id:
+        # Increment activity completion count
+        activity_type = activity.get("activity_type", "other")
+        await db.initiatives.update_one(
+            {"id": initiative_id},
+            {
+                "$inc": {f"activity_template.{activity_type}.completed": 1},
+                "$set": {"updated_at": now}
+            }
+        )
+    
+    return {
+        "activity_id": activity_id,
+        "completed_at": now,
+        "outcome": outcome,
+        "updated_initiative": initiative_id
+    }
+
             "email_from": msg.get("email_from"),
             "subject": msg.get("subject"),
         })
