@@ -1198,6 +1198,16 @@ async def create_activity(
     activity = {
         "id": activity_id,
         **data.model_dump(),
+        
+        # NEW: Multi-dimensional linkages
+        "portfolio_id": None,  # Will be set via separate endpoint
+        "initiative_id": None,
+        "goal_ids": [],
+        "kpi_ids": [],
+        
+        # Outcome tracking
+        "outcome": None,
+        
         "created_by_id": user_id,
         "created_by_name": token_data.get("name", ""),
         "assigned_to_id": data.account_id or user_id,
@@ -1207,6 +1217,17 @@ async def create_activity(
     }
     
     await db.activities.insert_one(activity)
+    
+    # Log activity creation
+    await db.audit_log.insert_one({
+        "id": str(uuid.uuid4()),
+        "action": "activity_created",
+        "user_id": user_id,
+        "details": {"activity_id": activity_id, "title": data.title},
+        "timestamp": now
+    })
+    
+    return {"id": activity_id, "message": "Activity created successfully"}
 
 
 
