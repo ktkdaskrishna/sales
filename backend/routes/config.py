@@ -74,10 +74,13 @@ DEFAULT_NAV_ITEMS = [
     {"id": "dashboard", "label": "Dashboard", "icon": "LayoutDashboard", "path": "/dashboard", "order": 1},
     {"id": "accounts", "label": "Accounts", "icon": "Building2", "path": "/accounts", "order": 2},
     {"id": "opportunities", "label": "Opportunities", "icon": "Target", "path": "/opportunities", "order": 3},
-    {"id": "goals", "label": "Goals", "icon": "Award", "path": "/goals", "order": 4},
-    {"id": "activity", "label": "Activity", "icon": "Activity", "path": "/activity", "order": 5},
-    {"id": "invoices", "label": "Invoices", "icon": "FileText", "path": "/invoices", "order": 6},
-    {"id": "kpis", "label": "KPIs", "icon": "BarChart3", "path": "/kpis", "order": 7},
+    {"id": "teams", "label": "Teams", "icon": "Users", "path": "/teams", "order": 4},
+    {"id": "portfolios", "label": "Portfolios", "icon": "Briefcase", "path": "/portfolios", "order": 5},
+    {"id": "initiatives", "label": "Initiatives", "icon": "Rocket", "path": "/initiatives", "order": 6},
+    {"id": "goals", "label": "Goals", "icon": "Award", "path": "/goals", "order": 7},
+    {"id": "activity", "label": "Activity", "icon": "Activity", "path": "/activity", "order": 8},
+    {"id": "invoices", "label": "Invoices", "icon": "FileText", "path": "/invoices", "order": 9},
+    {"id": "kpis", "label": "KPIs", "icon": "BarChart3", "path": "/kpis", "order": 10},
     {"id": "email", "label": "Email & Calendar", "icon": "Mail", "path": "/my-outlook", "order": 8},
 ]
 
