@@ -124,6 +124,8 @@ from routes.sales import router as sales_router
 from routes.config import router as config_router
 from routes.goals import router as goals_router
 from routes.teams import router as teams_router  # NEW: Team management
+from routes.portfolios import router as portfolios_router  # NEW: Portfolio management
+from routes.initiatives import router as initiatives_router  # NEW: Initiative tracking
 from api.v2_dashboard import router as v2_dashboard_router  # CQRS v2 API
 from api.v2_activities import router as v2_activities_router  # CQRS v2 Activities API
 from api.cqrs_sync_api import router as cqrs_sync_router  # CQRS sync endpoints
@@ -140,6 +142,8 @@ api_router.include_router(sales_router)
 api_router.include_router(config_router)
 api_router.include_router(goals_router)
 api_router.include_router(teams_router)  # NEW: Team management
+api_router.include_router(portfolios_router)  # NEW: Portfolio management
+api_router.include_router(initiatives_router)  # NEW: Initiative tracking
 api_router.include_router(v2_dashboard_router, prefix="/v2/dashboard")  # CQRS v2
 api_router.include_router(v2_activities_router, prefix="/v2/activities")  # CQRS v2 Activities
 api_router.include_router(cqrs_sync_router, prefix="/integrations/cqrs")  # CQRS sync with prefix
