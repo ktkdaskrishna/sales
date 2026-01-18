@@ -9,7 +9,7 @@ API endpoints for Super Admin functionality
 - Sync Configuration
 """
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
-from typing import List, Optional
+from typing import List, Optional, Dict
 from datetime import datetime, timezone
 from pydantic import BaseModel
 import uuid
