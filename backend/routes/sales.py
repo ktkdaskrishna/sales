@@ -660,18 +660,6 @@ async def calculate_blue_sheet_probability(
         if analysis.budget_not_confirmed:
             recommendations.append("Confirm budget availability and timeline with decision makers")
     
-    except Exception as e:
-        logger.warning(f"LLM recommendation error: {e}")
-        # Fallback recommendations
-        if not analysis.economic_buyer_identified:
-            recommendations.append("Identify and engage the Economic Buyer - the person with final budget authority")
-        if not analysis.coach_identified:
-            recommendations.append("Develop a Coach inside the organization who can guide your strategy")
-        if analysis.budget_not_confirmed:
-            recommendations.append("Confirm budget allocation and funding timeline with key stakeholders")
-        if not analysis.mutual_action_plan:
-            recommendations.append("Create a mutual action plan with clear milestones and commitments")
-    
     # Update opportunity
     await db.opportunities.update_one(
         {"id": opp_id},
