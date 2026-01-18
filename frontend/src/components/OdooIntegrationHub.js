@@ -1195,7 +1195,7 @@ const SyncTab = ({ config, onRefresh }) => {
   const handleSync = async (mappingId) => {
     setSyncing({ ...syncing, [mappingId]: true });
     try {
-      const response = await api.post(`/odoo/sync/${mappingId}`);
+      const response = await api.post(`/integrations/odoo/sync/${mappingId}`);
       const result = response.data;
       toast.success(
         `Sync complete: ${result.created} created, ${result.updated} updated` +
@@ -1233,7 +1233,7 @@ const SyncTab = ({ config, onRefresh }) => {
   const handlePreview = async (mappingId) => {
     setPreviewing({ ...previewing, [mappingId]: true });
     try {
-      const response = await api.get(`/odoo/preview/${mappingId}?limit=3`);
+      const response = await api.get(`/integrations/odoo/preview/${mappingId}?limit=3`);
       setPreviewData({ ...previewData, [mappingId]: response.data });
     } catch (error) {
       toast.error(error.response?.data?.detail || "Preview failed");
@@ -1400,7 +1400,7 @@ const SyncLogsTab = () => {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      const response = await api.get("/odoo/sync-logs?limit=50");
+      const response = await api.get("/integrations/odoo/sync-logs?limit=50");
       setLogs(response.data);
     } catch (error) {
       toast.error("Failed to load sync logs");
