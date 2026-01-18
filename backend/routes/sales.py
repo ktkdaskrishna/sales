@@ -952,8 +952,10 @@ async def get_commission_templates(
                 "base_rate": 0.08,
                 "tiers": [
                     {"min_attainment": 0, "max_attainment": 75, "multiplier": 0.8},
-                    {"min_attainment": 75, "max_attainment": 100, "multiplier": 1.0},
-
+                    {"min_attainment": 75, "max_attainment": 100, "multiplier": 1.0}
+                ]
+            }
+        ]
 
 
 @router.post("/users/{user_id}/commission-template")
