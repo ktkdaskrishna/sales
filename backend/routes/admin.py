@@ -5,8 +5,10 @@ API endpoints for Super Admin functionality
 - Role & Permission Management
 - Department Management
 - System Configuration
+- Webhook Configuration
+- Sync Configuration
 """
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from typing import List, Optional
 from datetime import datetime, timezone
 from pydantic import BaseModel
