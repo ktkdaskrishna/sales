@@ -443,6 +443,178 @@ const ConnectionTab = ({ config, onUpdate, onTest, testing, status }) => {
           >
             {testing ? <Loader2 className="w-4 h-4 animate-spin" /> : <TestTube className="w-4 h-4" />}
             Test
+
+// ===================== WEBHOOK TAB =====================
+
+const WebhookTab = ({ config }) => {
+  const [copied, setCopied] = useState(false);
+  const apiBase = process.env.REACT_APP_BACKEND_URL || window.location.origin;
+  const webhookUrl = `${apiBase}/api/webhooks/odoo`;
+  const webhookSecret = config?.connection?.api_key || "your-odoo-api-key";
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(webhookUrl);
+      setCopied(true);
+      toast.success("Webhook URL copied!");
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      toast.error("Failed to copy webhook URL");
+    }
+  };
+
+  return (
+    <div className="max-w-3xl mx-auto space-y-6">
+      <div className="bg-white rounded-2xl shadow-sm border p-6 space-y-4">
+        <div className="flex items-center gap-2">
+          <Webhook className="w-5 h-5 text-purple-600" />
+          <h3 className="text-lg font-semibold text-slate-900">Real-Time Webhooks</h3>
+        </div>
+        <p className="text-sm text-slate-600">
+          Use Odoo webhooks to sync new or deleted records in under 1 second. This ensures
+          changes in Odoo reflect immediately in the app and Data Lake.
+        </p>
+
+        <div className="grid gap-4">
+          <div>
+            <label className="text-sm font-medium text-slate-700">Webhook URL</label>
+            <div className="mt-2 flex items-center gap-2">
+              <input
+                value={webhookUrl}
+                readOnly
+                className="input w-full font-mono text-xs"
+              />
+              <button
+                onClick={handleCopy}
+                className="btn-secondary flex items-center gap-2"
+                type="button"
+              >
+                <Copy className="w-4 h-4" />
+                {copied ? "Copied" : "Copy"}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-slate-700">Secret Header</label>
+            <div className="mt-2 bg-slate-50 border rounded-lg p-3 text-xs font-mono text-slate-700">
+              X-Odoo-Webhook-Secret: {webhookSecret}
+            </div>
+            <p className="text-xs text-slate-500 mt-2">
+              Use the same API key configured above. This allows secure deletion syncs.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-slate-900 text-slate-100 rounded-2xl border border-slate-800 p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <Info className="w-4 h-4 text-purple-300" />
+          <h4 className="font-semibold">Odoo Automated Action (Delete Sync)</h4>
+        </div>
+        <p className="text-xs text-slate-400 mb-4">
+          Add an automated action in Odoo for the <strong>unlink</strong> event to send deletes in
+          real time.
+        </p>
+        <pre className="text-xs bg-slate-950/70 border border-slate-800 rounded-lg p-4 overflow-x-auto">
+{`import requests
+requests.post(
+    '${webhookUrl}',
+    json={
+        'model': env.context.get('active_model'),
+        'action': 'unlink',
+        'record_ids': env.context.get('active_ids', [])
+    },
+    headers={'X-Odoo-Webhook-Secret': '${webhookSecret}'},
+    timeout=5
+)`}
+        </pre>
+      </div>
+
+      <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
+        <div className="flex items-center gap-2 mb-2">
+          <Zap className="w-4 h-4 text-amber-600" />
+          <h4 className="font-semibold text-amber-900">Instant Delete Sync</h4>
+        </div>
+        <p className="text-sm text-amber-800">
+          Deletions are soft-removed from the Data Lake and CQRS projections immediately, so UI
+          updates reflect in under a second.
+        </p>
+      </div>
+    </div>
+  );
+};
+
+// ===================== ODOO DATA LAKE TAB =====================
+
+const OdooDataLakeTab = ({ stats }) => {
+  const groups = stats.groups?.length
+    ? stats.groups
+    : [
+        { id: "crm", name: "CRM Core", entities: ["account", "opportunity", "activity"] },
+        { id: "finance", name: "Finance", entities: ["invoice", "order"] },
+        { id: "people", name: "People", entities: ["user"] },
+      ];
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-6">
+      <div className="bg-white rounded-2xl shadow-sm border p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+              <Layers className="w-5 h-5 text-purple-600" />
+              Odoo Data Lake Overview
+            </h3>
+            <p className="text-sm text-slate-500 mt-1">
+              Only Odoo-sourced records are shown in these zones.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4 mt-6">
+          {[
+            { label: "Raw (Bronze)", value: stats.raw },
+            { label: "Canonical (Silver)", value: stats.canonical },
+            { label: "Serving (Gold)", value: stats.serving },
+          ].map((item) => (
+            <div key={item.label} className="bg-slate-50 border rounded-xl p-4">
+              <p className="text-xs text-slate-500">{item.label}</p>
+              <p className="text-2xl font-semibold text-slate-900 mt-1">{item.value}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-sm border p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Database className="w-5 h-5 text-purple-600" />
+          <h3 className="text-lg font-semibold text-slate-900">Odoo Data Groups</h3>
+        </div>
+        <p className="text-sm text-slate-500 mb-5">
+          Group settings keep Odoo field mapping and data lake settings aligned by domain.
+        </p>
+        <div className="grid md:grid-cols-3 gap-4">
+          {groups.map((group) => (
+            <div key={group.id} className="border rounded-xl p-4 bg-slate-50">
+              <p className="text-sm font-semibold text-slate-900">{group.name}</p>
+              <ul className="mt-3 space-y-2">
+                {group.entities.map((entity) => (
+                  <li key={entity} className="flex items-center justify-between text-xs text-slate-600">
+                    <span className="capitalize">{entity.replace("_", " ")}</span>
+                    <span className="font-semibold text-slate-900">
+                      {stats.entityCounts?.[entity] ?? 0}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
           </button>
         </div>
       </div>
