@@ -146,8 +146,10 @@ const OdooIntegrationHub = () => {
   }
 
   const tabs = [
-    { id: "connection", label: "Connection", icon: Globe },
+    { id: "api", label: "API Config", icon: Globe },
+    { id: "webhooks", label: "Webhooks", icon: Webhook },
     { id: "mappings", label: "Field Mapping", icon: ArrowLeftRight },
+    { id: "datalake", label: "Data Lake", icon: Layers },
     { id: "sync", label: "Sync Data", icon: RefreshCw },
     { id: "logs", label: "History", icon: History },
   ];
@@ -191,7 +193,7 @@ const OdooIntegrationHub = () => {
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
-            const isDisabled = tab.id !== "connection" && !config?.connection?.is_connected;
+            const isDisabled = !["api", "webhooks"].includes(tab.id) && !config?.connection?.is_connected;
             
             return (
               <button
@@ -218,7 +220,7 @@ const OdooIntegrationHub = () => {
 
       {/* Tab Content */}
       <div className="flex-1 overflow-y-auto p-6">
-        {activeTab === "connection" && (
+        {activeTab === "api" && (
           <ConnectionTab
             config={config}
             onUpdate={handleUpdateConnection}
@@ -227,8 +229,14 @@ const OdooIntegrationHub = () => {
             status={connectionStatus}
           />
         )}
+        {activeTab === "webhooks" && (
+          <WebhookTab config={config} />
+        )}
         {activeTab === "mappings" && (
           <SimpleFieldMappingTab config={config} onRefresh={fetchConfig} />
+        )}
+        {activeTab === "datalake" && (
+          <OdooDataLakeTab stats={dataLakeStats} />
         )}
         {activeTab === "sync" && (
           <SyncTab config={config} onRefresh={fetchConfig} />
@@ -301,7 +309,7 @@ const ConnectionTab = ({ config, onUpdate, onTest, testing, status }) => {
           <div>
             <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
               <Shield className="w-5 h-5 text-purple-600" />
-              Odoo Connection Settings
+              Odoo API Configuration
             </h3>
             <p className="text-sm text-slate-500 mt-1">
               Connect to Odoo 17, 18, or 19 using secure JSON-RPC API
