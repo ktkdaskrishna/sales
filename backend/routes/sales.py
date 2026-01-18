@@ -933,7 +933,7 @@ async def get_commission_templates(
                 "name": "Cybersecurity Standard",
                 "description": "Standard tiered commission for cybersecurity sales",
                 "template_type": "tiered_attainment",
-                "base_rate": 0.05,
+                "base_rate": 0.01,  # Changed from 0.05 (5%) to 0.01 (1%)
                 "tiers": [
                     {"min_attainment": 0, "max_attainment": 50, "multiplier": 0.5},
                     {"min_attainment": 50, "max_attainment": 100, "multiplier": 1.0},
