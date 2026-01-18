@@ -79,7 +79,19 @@ async def odoo_webhook(
     
     # CRITICAL: Verify webhook secret (HARD FAIL on invalid)
     webhook_secret = request.headers.get("X-Odoo-Webhook-Secret")
-    expected_secret = settings.ODOO_API_KEY
+    expected_secret = None
+
+    db = Database.get_db()
+    system_config = await db.system_config.find_one({"id": "system_config"})
+    if system_config:
+        expected_secret = (
+            system_config.get("odoo_integration", {})
+            .get("connection", {})
+            .get("api_key")
+        )
+
+    if not expected_secret:
+        expected_secret = settings.ODOO_API_KEY
     
     if not webhook_secret or webhook_secret != expected_secret:
         logger.error(f"Invalid webhook secret from {request.client.host}")

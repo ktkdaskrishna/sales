@@ -40,6 +40,9 @@ import {
   ToggleLeft,
   ToggleRight,
   GripVertical,
+  Layers,
+  Webhook,
+  Copy,
 } from "lucide-react";
 
 // ===================== MAIN INTEGRATION HUB =====================
@@ -47,12 +50,20 @@ import {
 const OdooIntegrationHub = () => {
   const [config, setConfig] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("connection");
+  const [activeTab, setActiveTab] = useState("api");
   const [testingConnection, setTestingConnection] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState(null);
+  const [dataLakeStats, setDataLakeStats] = useState({
+    raw: 0,
+    canonical: 0,
+    serving: 0,
+    entityCounts: {},
+    groups: [],
+  });
 
   useEffect(() => {
     fetchConfig();
+    fetchDataLakeStats();
   }, []);
 
   const fetchConfig = async () => {
@@ -105,6 +116,21 @@ const OdooIntegrationHub = () => {
     } catch (error) {
       toast.error("Failed to save connection settings");
       return false;
+    }
+  };
+
+  const fetchDataLakeStats = async () => {
+    try {
+      const response = await api.get("/odoo/data-lake-stats");
+      setDataLakeStats({
+        raw: response.data?.raw_zone?.total_records || 0,
+        canonical: response.data?.canonical_zone?.total_records || 0,
+        serving: response.data?.serving_zone?.total_records || 0,
+        entityCounts: response.data?.entity_counts || {},
+        groups: response.data?.groups || [],
+      });
+    } catch (error) {
+      console.error("Failed to fetch Odoo data lake stats:", error);
     }
   };
 
