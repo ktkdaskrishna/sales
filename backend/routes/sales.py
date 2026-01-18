@@ -1338,16 +1338,6 @@ async def complete_activity_with_outcome(
         "updated_initiative": initiative_id
     }
 
-            "email_from": msg.get("email_from"),
-            "subject": msg.get("subject"),
-        })
-    
-    return {
-        "messages": messages,
-        "count": len(messages),
-        "opportunity_id": opp_id
-    }
-
     activity.pop("_id", None)
     return activity
 
