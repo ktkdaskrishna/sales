@@ -378,6 +378,90 @@ async def trigger_manual_sync(
     
     db = Database.get_db()
     
+
+
+
+# ===================== LLM CONFIGURATION =====================
+
+@router.get("/llm/config")
+async def get_llm_config(token_data: dict = Depends(require_super_admin)):
+    """Get centralized LLM configuration"""
+    from services.llm_service import LLMService
+    
+    config = await LLMService.get_config()
+    
+    # Mask API key for security
+    if config.get("api_key"):
+        config["api_key"] = config["api_key"][:8] + "..." + config["api_key"][-4:]
+    
+    return config
+
+
+@router.post("/llm/config")
+async def update_llm_config(
+    provider: str,
+    api_key: str,
+    default_model: str,
+    features: Optional[Dict] = None,
+    token_data: dict = Depends(require_super_admin)
+):
+    """
+    Update centralized LLM configuration.
+    All AI features will use this config.
+    """
+    from services.llm_service import LLMService
+    
+    config_updates = {
+        "provider": provider,
+        "api_key": api_key,
+        "default_model": default_model,
+        "base_url": "https://api.openai.com/v1" if provider == "openai" else None,
+        "features": features or {
+            "deal_confidence": {"enabled": True, "model": default_model},
+            "field_mapping": {"enabled": True, "model": default_model},
+            "chat": {"enabled": True, "model": default_model},
+            "data_quality": {"enabled": True, "model": default_model}
+        },
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "updated_by": token_data["id"]
+    }
+    
+    success = await LLMService.update_config(config_updates)
+    
+    logger.info(f"LLM config updated by {token_data.get('email')}: {provider} / {default_model}")
+    
+    return {
+        "message": "LLM configuration updated",
+        "provider": provider,
+        "model": default_model,
+        "features_enabled": len(features or {})
+    }
+
+
+@router.post("/llm/test")
+async def test_llm_connection(token_data: dict = Depends(require_super_admin)):
+    """Test LLM connection with current configuration"""
+    from services.llm_service import LLMService
+    
+    try:
+        # Simple test prompt
+        response = await LLMService.call_llm(
+            "chat",
+            "Say 'LLM connection successful' in exactly 5 words."
+        )
+        
+        return {
+            "status": "success",
+            "message": "LLM connection working",
+            "test_response": response[:100]
+        }
+    except Exception as e:
+        return {
+            "status": "failed",
+            "message": "LLM connection failed",
+            "error": str(e)
+        }
+
     # Trigger sync in background
     async def run_sync():
         try:
