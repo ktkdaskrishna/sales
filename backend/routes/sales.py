@@ -953,6 +953,51 @@ async def get_commission_templates(
                 "tiers": [
                     {"min_attainment": 0, "max_attainment": 75, "multiplier": 0.8},
                     {"min_attainment": 75, "max_attainment": 100, "multiplier": 1.0},
+
+
+
+@router.post("/users/{user_id}/commission-template")
+async def assign_commission_template_to_user(
+    user_id: str,
+    template_id: str,
+    token_data: dict = Depends(require_approved())
+):
+    """
+    Assign a commission template to a specific user.
+    Enables per-person commission rate customization.
+    """
+    db = Database.get_db()
+    
+    # Verify user exists
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Verify template exists
+    template = await db.commission_templates.find_one({"id": template_id})
+    if not template:
+        raise HTTPException(status_code=404, detail="Commission template not found")
+    
+    # Assign template to user
+    await db.users.update_one(
+        {"id": user_id},
+        {
+            "$set": {
+                "commission_template_id": template_id,
+                "updated_at": datetime.now(timezone.utc)
+            }
+        }
+    )
+    
+    logger.info(f"Assigned commission template {template.get('name')} to user {user.get('email')}")
+    
+    return {
+        "message": "Commission template assigned",
+        "user_id": user_id,
+        "template_name": template.get("name"),
+        "base_rate": template.get("base_rate", 0.01)
+    }
+
                     {"min_attainment": 100, "max_attainment": 125, "multiplier": 1.3},
                     {"min_attainment": 125, "max_attainment": 200, "multiplier": 1.6},
                 ],
