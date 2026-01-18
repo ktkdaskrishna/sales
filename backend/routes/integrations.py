@@ -500,9 +500,9 @@ async def sync_all_from_odoo(
         return OdooFullSyncResponse(
             success=not result["errors"],
             message=f"Synced {result['synced']} records across all entities",
-            synced_entities=result.get("entity_results", {}),
+            synced_entities={k: v["synced"] for k, v in result.get("entity_results", {}).items()},
             errors=result["errors"],
-            duration_seconds=0  # Can be tracked if needed
+            duration_seconds=0
         )
     except Exception as e:
         logger.error(f"Full sync failed: {e}", exc_info=True)
@@ -510,20 +510,9 @@ async def sync_all_from_odoo(
             success=False,
             message=f"Sync failed: {str(e)}",
             synced_entities={},
-            errors=[str(e)]
+            errors=[str(e)],
+            duration_seconds=0
         )
-        
-        return OdooFullSyncResponse(
-            success=result["success"],
-            message=result["message"],
-            synced_entities=result["synced_entities"],
-            errors=result["errors"],
-            duration_seconds=result["duration_seconds"]
-        )
-    except RuntimeError as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.get("/departments")
