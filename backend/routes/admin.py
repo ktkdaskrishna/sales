@@ -663,6 +663,92 @@ async def assign_role_to_user(
     
     return {
         "message": "Role assigned successfully",
+
+
+
+@router.post("/users/cleanup-inconsistent")
+async def cleanup_inconsistent_users(
+    token_data: dict = Depends(require_super_admin)
+):
+    """
+    Cleanup users with inconsistent states.
+    
+    Fixes:
+    - Users with "No Role" + "Approved" → Set to pending
+    - Users with "Approved" + "Inactive" → Set is_active=True
+    - TEST users → Deactivate if not needed
+    """
+    db = Database.get_db()
+    
+    stats = {
+        "no_role_approved": 0,
+        "approved_inactive": 0,
+        "test_users_deactivated": 0
+    }
+    
+    # Fix 1: Users approved without role → Set back to pending
+    result1 = await db.users.update_many(
+        {
+            "approval_status": "approved",
+            "$or": [
+                {"role": {"$exists": False}},
+                {"role": None},
+                {"role": "pending"}
+            ]
+        },
+        {
+            "$set": {
+                "approval_status": "pending",
+                "updated_at": datetime.now(timezone.utc)
+            }
+        }
+    )
+    stats["no_role_approved"] = result1.modified_count
+    
+    # Fix 2: Users approved but inactive → Activate them
+    result2 = await db.users.update_many(
+        {
+            "approval_status": "approved",
+            "is_active": False
+        },
+        {
+            "$set": {
+                "is_active": True,
+                "updated_at": datetime.now(timezone.utc)
+            }
+        }
+    )
+    stats["approved_inactive"] = result2.modified_count
+    
+    # Fix 3: TEST users → Deactivate
+    result3 = await db.users.update_many(
+        {
+            "email": {"$regex": "^test_", "$options": "i"},
+            "is_active": True
+        },
+        {
+            "$set": {
+                "is_active": False,
+                "approval_status": "rejected",
+                "rejection_reason": "Test user - automated cleanup",
+                "updated_at": datetime.now(timezone.utc)
+            }
+        }
+    )
+    stats["test_users_deactivated"] = result3.modified_count
+    
+    logger.info(f"User cleanup complete: {stats}")
+    
+    return {
+        "message": "User cleanup complete",
+        "statistics": stats,
+        "actions_taken": [
+            f"Set {stats['no_role_approved']} users without roles back to pending",
+            f"Activated {stats['approved_inactive']} approved users",
+            f"Deactivated {stats['test_users_deactivated']} test users"
+        ]
+    }
+
         "user_id": user_id,
         "role": role.get("name"),
         "department": dept.get("name") if department_id and dept else None,
