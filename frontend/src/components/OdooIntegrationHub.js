@@ -309,7 +309,7 @@ const ConnectionTab = ({ config, onUpdate, onTest, testing, status }) => {
     setSaving(false);
     
     if (success) {
-      onTest();
+      onTest(normalizedData);
     }
   };
 
