@@ -813,10 +813,14 @@ const Opportunities = () => {
       render: (val) => val ? formatDate(val) : "—",
     },
     {
-      key: "owner_email",
+      key: "owner_name",
       label: "Owner",
       sortable: true,
-      render: (val) => val || "—",
+      render: (val, row) => (
+        <span className="text-slate-700">
+          {val || row.owner_email || "Unassigned"}
+        </span>
+      ),
     },
     {
       key: "actions",
