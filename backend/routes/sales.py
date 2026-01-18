@@ -659,16 +659,7 @@ async def calculate_blue_sheet_probability(
             recommendations.append("Develop a Coach inside the organization who can guide your strategy")
         if analysis.budget_not_confirmed:
             recommendations.append("Confirm budget availability and timeline with decision makers")
-                session_id=f"bluesheet-{opp_id}-{datetime.now().timestamp()}",
-                system_message="You are a sales strategy expert specializing in B2B enterprise cybersecurity sales using Miller Heiman Blue Sheet methodology. Provide brief, actionable recommendations."
-            ).with_model(model_provider, model_name)
-            
-            message = UserMessage(text=context)
-            # send_message is async
-            response = await chat.send_message(message)
-            recommendations = [line.strip() for line in response.split("\n") if line.strip() and len(line) > 10][:3]
-            logger.info(f"LLM recommendations generated: {len(recommendations)}")
-            
+    
     except Exception as e:
         logger.warning(f"LLM recommendation error: {e}")
         # Fallback recommendations
