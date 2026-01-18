@@ -533,6 +533,30 @@ const Goals = () => {
                 </div>
               </div>
               
+              {/* Team Member Assignment - Only for managers */}
+              {teamMembers.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                    Assign to Team Member
+                  </label>
+                  <select
+                    value={formData.assignee_id}
+                    onChange={(e) => setFormData({ ...formData, assignee_id: e.target.value })}
+                    className="input"
+                  >
+                    <option value="">My Goal (Personal)</option>
+                    {teamMembers.map(member => (
+                      <option key={member.id} value={member.id}>
+                        {member.name} ({member.email})
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Assign this goal to a specific team member or keep it as your personal goal
+                  </p>
+                </div>
+              )}
+              
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">
                   Due Date *
