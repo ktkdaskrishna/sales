@@ -385,7 +385,7 @@ async def process_webhook_delete(
                 "timestamp": now,
                 "status": "failed"
             })
-        except:
+        except Exception:
             pass  # Don't fail on logging failure
         
         raise
