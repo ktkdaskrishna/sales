@@ -665,6 +665,94 @@ async def preview_odoo_data(
 
 
 
+
+@router.get("/odoo/schema-drift")
+async def check_schema_drift(
+    token_data: dict = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.ADMIN]))
+):
+    """
+    Check for schema drift between Odoo and configured field mappings.
+    
+    Returns new/removed fields that may cause data issues.
+    """
+    from services.odoo.schema_monitor import OdooSchemaMonitor
+    
+    db = Database.get_db()
+    
+    try:
+        # Get Odoo config
+        intg = await db.integrations.find_one({"integration_type": "odoo"})
+        if not intg or not intg.get("config"):
+            raise HTTPException(status_code=404, detail="Odoo not configured")
+        
+        monitor = OdooSchemaMonitor(db, intg["config"])
+        report = await monitor.detect_drift_for_all_entities()
+        
+        return report
+    except Exception as e:
+        logger.error(f"Schema drift check failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/odoo/health")
+async def get_sync_health(
+    token_data: dict = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.ADMIN]))
+):
+    """
+    Get sync health metrics for all Odoo entities.
+    
+    Returns freshness, lag, and health status per entity.
+    """
+    db = Database.get_db()
+    
+    try:
+        sys_config = await db.system_config.find_one({"id": "system_config"})
+        if not sys_config or not sys_config.get("odoo_integration"):
+            raise HTTPException(status_code=404, detail="Odoo not configured")
+        
+        entity_mappings = sys_config["odoo_integration"].get("entity_mappings", [])
+        
+        health_reports = []
+        for mapping in entity_mappings:
+            metrics = mapping.get("health_metrics", {})
+            
+            # Calculate sync lag
+            last_sync = metrics.get("last_successful_sync")
+            if last_sync:
+                lag_seconds = (datetime.now(timezone.utc) - last_sync).total_seconds()
+            else:
+                lag_seconds = None
+            
+            # Determine health status
+            if lag_seconds is None:
+                health_status = "unknown"
+            elif lag_seconds < 300:  # < 5 min
+                health_status = "healthy"
+            elif lag_seconds < 900:  # < 15 min
+                health_status = "warning"
+            else:
+                health_status = "critical"
+            
+            health_reports.append({
+                "entity": mapping.get("name"),
+                "odoo_model": mapping.get("odoo_model"),
+                "last_sync": last_sync.isoformat() if last_sync else None,
+                "sync_lag_seconds": int(lag_seconds) if lag_seconds else None,
+                "health_status": health_status,
+                "total_records": metrics.get("total_records", 0)
+            })
+        
+        return {
+            "entities": health_reports,
+            "overall_health": "healthy" if all(r["health_status"] == "healthy" for r in health_reports) else "warning",
+            "checked_at": datetime.now(timezone.utc).isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
 @router.put("/odoo/mappings/{mapping_id}/fields")
 async def update_odoo_field_mappings(
     mapping_id: str,
