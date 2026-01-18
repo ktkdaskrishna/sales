@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
+from core.database import Database
 from odoo_models import (
     OdooIntegrationConfig, OdooConnectionConfig, EntityMapping, FieldMapping,
     SyncLog, OdooModel, SyncDirection, FieldTransformType,

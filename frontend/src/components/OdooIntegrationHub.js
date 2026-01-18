@@ -68,7 +68,7 @@ const OdooIntegrationHub = () => {
 
   const fetchConfig = async () => {
     try {
-      const response = await api.get("/integrations/odoo");
+      const response = await api.get("/odoo/config");
       setConfig(response.data);
       if (response.data.connection?.is_connected) {
         setConnectionStatus({ 
@@ -88,7 +88,7 @@ const OdooIntegrationHub = () => {
     setTestingConnection(true);
     setConnectionStatus(null);
     try {
-      const response = await api.post("/integrations/odoo/test");
+      const response = await api.post("/odoo/test-connection");
       setConnectionStatus(response.data);
       if (response.data.success) {
         toast.success("Connection successful!");
@@ -109,7 +109,7 @@ const OdooIntegrationHub = () => {
 
   const handleUpdateConnection = async (connectionData) => {
     try {
-      await api.post("/integrations/odoo/configure", connectionData);
+      await api.put("/odoo/config/connection", connectionData);
       toast.success("Connection settings saved");
       fetchConfig();
       return true;
@@ -121,7 +121,7 @@ const OdooIntegrationHub = () => {
 
   const fetchDataLakeStats = async () => {
     try {
-      const response = await api.get("/integrations/odoo/data-lake-stats");
+      const response = await api.get("/odoo/data-lake-stats");
       setDataLakeStats({
         raw: response.data?.raw_zone?.total_records || 0,
         canonical: response.data?.canonical_zone?.total_records || 0,
