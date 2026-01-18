@@ -998,16 +998,8 @@ async def assign_commission_template_to_user(
         "base_rate": template.get("base_rate", 0.01)
     }
 
-                    {"min_attainment": 100, "max_attainment": 125, "multiplier": 1.3},
-                    {"min_attainment": 125, "max_attainment": 200, "multiplier": 1.6},
-                ],
-                "product_weights": {"MSSP": 1.0},
-                "new_logo_multiplier": 1.3,
-                "created_at": datetime.now(timezone.utc)
-            }
-        ]
-        await db.commission_templates.insert_many(default_templates)
-        templates = default_templates
+
+# ===================== ACCOUNTS =====================
     
     return templates
 
