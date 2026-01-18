@@ -46,7 +46,8 @@ class IntegrationResponse(BaseModel):
     sync_status: str
     error_message: Optional[str] = None
     config_summary: Dict[str, Any] = {}
-    connection: Optional[Dict[str, Any]] = None  # NEW: Connection details for Odoo
+    connection: Optional[Dict[str, Any]] = None  # Connection details for Odoo
+    entity_mappings: Optional[List[Dict[str, Any]]] = None  # Entity mappings for Odoo
 
 
 class TestConnectionResponse(BaseModel):
@@ -121,6 +122,7 @@ async def get_integration(
     
     config_summary = {}
     connection_status = {}
+    entity_mappings = []
     
     if intg.get("config"):
         config = intg["config"]
@@ -145,8 +147,13 @@ async def get_integration(
                 "api_key": "***" + config.get("api_key", "")[-4:] if config.get("api_key") else None,
                 "odoo_version": "17+"  # Default, can be updated after test
             }
+            
+            # Fetch entity_mappings from system_config for Odoo
+            sys_config = await db.system_config.find_one({"id": "system_config"}, {"_id": 0})
+            if sys_config and sys_config.get("odoo_integration"):
+                entity_mappings = sys_config["odoo_integration"].get("entity_mappings", [])
     
-    # Build response with additional connection info for frontend compatibility
+    # Build response with additional fields for frontend compatibility
     response_data = {
         "id": intg.get("id", ""),
         "integration_type": intg.get("integration_type", ""),
@@ -155,7 +162,8 @@ async def get_integration(
         "sync_status": intg.get("sync_status", "pending"),
         "error_message": intg.get("error_message"),
         "config_summary": config_summary,
-        "connection": connection_status if connection_status else None
+        "connection": connection_status if connection_status else None,
+        "entity_mappings": entity_mappings if entity_mappings else None
     }
     
     return response_data
