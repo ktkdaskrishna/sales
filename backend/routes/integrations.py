@@ -663,8 +663,6 @@ async def preview_odoo_data(
         logger.error(f"Preview failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-        )
-
 
 @router.get("/departments")
 async def get_synced_departments(
