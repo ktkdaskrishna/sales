@@ -102,14 +102,48 @@ async def odoo_webhook(
             message=f"Model {payload.model} not configured for sync"
         )
     
-    # Handle delete action
+    # Handle DELETE action (unlink) - CRITICAL FOR REAL-TIME SYNC
     if payload.action == "unlink":
-        # Mark records as deleted in our system
-        # (We don't actually delete, just flag)
-        return WebhookResponse(
-            status="acknowledged",
-            message=f"Delete action noted for {len(payload.record_ids)} records"
+        logger.info(f"Processing DELETE webhook for {len(payload.record_ids)} {payload.model} records")
+        
+        # Process deletion immediately in background (sub-second response)
+        background_tasks.add_task(
+            process_webhook_delete,
+            entity_type=entity_type,
+            record_ids=payload.record_ids,
+            model=payload.model,
+            start_time=start_time
         )
+        
+        return WebhookResponse(
+            status="accepted",
+            message=f"Delete webhook accepted for {len(payload.record_ids)} records. Processing in background.",
+            processed=len(payload.record_ids)
+        )
+    
+    # Handle CREATE/UPDATE actions
+    if payload.action in ["create", "write"]:
+        logger.info(f"Processing {payload.action.upper()} webhook for {len(payload.record_ids)} {payload.model} records")
+        
+        background_tasks.add_task(
+            process_webhook_update,
+            entity_type=entity_type,
+            record_ids=payload.record_ids,
+            data=payload.data,
+            action=payload.action
+        )
+        
+        return WebhookResponse(
+            status="accepted",
+            message=f"{payload.action.capitalize()} webhook accepted. Processing {len(payload.record_ids)} records.",
+            processed=len(payload.record_ids)
+        )
+    
+    # Unknown action
+    return WebhookResponse(
+        status="ignored",
+        message=f"Unknown action: {payload.action}"
+    )
     
     # For create/update, trigger incremental sync
     background_tasks.add_task(
