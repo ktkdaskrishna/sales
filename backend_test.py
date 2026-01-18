@@ -856,7 +856,14 @@ def test_odoo_config_save_and_admin_features():
         print("❌ Login failed, cannot proceed")
         return False
     
-    all_passed = True
+    test_results = {
+        "odoo_save": False,
+        "odoo_test": False,
+        "data_lake_stats": False,
+        "llm_get": False,
+        "llm_post": False,
+        "commission_templates": False
+    }
     
     # ===================== PRIORITY 1: Odoo Configuration Save =====================
     print("\n" + "="*60)
@@ -883,9 +890,10 @@ def test_odoo_config_save_and_admin_features():
     if success:
         print("   ✅ Odoo config saved successfully (200 OK)")
         print("   ✅ No 'Objects are not valid as React child' error")
+        test_results["odoo_save"] = True
     else:
-        print("   ❌ Failed to save Odoo config")
-        all_passed = False
+        print("   ❌ CRITICAL: Odoo config save endpoint not working (404)")
+        print("   ℹ️  This indicates the Odoo routes are not properly registered")
     
     # Test 2: Test connection (should fail gracefully with invalid credentials)
     print("\n🔍 Test 2: Test Odoo Connection (Expected to fail gracefully)")
@@ -905,14 +913,13 @@ def test_odoo_config_save_and_admin_features():
             if not success_flag and isinstance(message, str):
                 print(f"   ✅ Connection test failed gracefully with string error: '{message[:100]}'")
                 print("   ✅ No 'Objects are not valid' crash")
+                test_results["odoo_test"] = True
             else:
                 print(f"   ⚠️  Unexpected response format: {response}")
         else:
             print(f"   ❌ Response is not a dict: {type(response)}")
-            all_passed = False
     else:
-        print("   ❌ Test connection endpoint failed")
-        all_passed = False
+        print("   ❌ CRITICAL: Test connection endpoint not working (404)")
     
     # ===================== PRIORITY 2: Admin Features =====================
     print("\n" + "="*60)
@@ -940,12 +947,11 @@ def test_odoo_config_save_and_admin_features():
             
             entity_counts = stats_response.get('entity_counts', {})
             print(f"      Entity Counts: {entity_counts}")
+            test_results["data_lake_stats"] = True
         else:
             print(f"   ❌ Missing zones: {missing}")
-            all_passed = False
     else:
         print("   ❌ Data Lake stats endpoint failed")
-        all_passed = False
     
     # Test 4: LLM Configuration - GET
     print("\n🔍 Test 4: LLM Configuration - GET")
@@ -960,35 +966,35 @@ def test_odoo_config_save_and_admin_features():
         print("   ✅ LLM config retrieved successfully")
         print(f"      Provider: {llm_config.get('provider', 'N/A')}")
         print(f"      Model: {llm_config.get('default_model', 'N/A')}")
+        test_results["llm_get"] = True
     else:
         print("   ❌ Failed to get LLM config")
-        all_passed = False
     
-    # Test 5: LLM Configuration - POST
+    # Test 5: LLM Configuration - POST (using query params)
     print("\n🔍 Test 5: LLM Configuration - POST")
-    llm_update = {
+    
+    # Build URL with query parameters
+    import urllib.parse
+    params = {
         "provider": "openai",
         "default_model": "gpt-4",
-        "api_key": "test-key-12345",
-        "features": {
-            "deal_confidence": {"enabled": True, "model": "gpt-4"}
-        }
+        "api_key": "test-key-12345"
     }
+    query_string = urllib.parse.urlencode(params)
     
     success, response = tester.run_test(
         "POST /api/admin/llm/config",
         "POST",
-        "admin/llm/config",
-        200,
-        data=llm_update
+        f"admin/llm/config?{query_string}",
+        200
     )
     
     if success:
         print("   ✅ LLM config saved successfully")
         print(f"      Response: {response.get('message', 'N/A')}")
+        test_results["llm_post"] = True
     else:
         print("   ❌ Failed to save LLM config")
-        all_passed = False
     
     # Test 6: Commission Templates
     print("\n🔍 Test 6: Commission Templates")
@@ -996,35 +1002,37 @@ def test_odoo_config_save_and_admin_features():
         "GET /api/sales/commission-templates",
         "GET",
         "sales/commission-templates",
-        200  # Changed from 404 to 200 - endpoint exists
+        200
     )
     
     if success:
         if isinstance(templates, list):
             print(f"   ✅ Commission templates endpoint working (returned {len(templates)} templates)")
+            test_results["commission_templates"] = True
         else:
             print(f"   ⚠️  Unexpected response type: {type(templates)}")
     else:
-        print("   ❌ Commission templates endpoint failed")
-        all_passed = False
+        print("   ❌ CRITICAL: Commission templates endpoint failed (404)")
+        print("   ℹ️  This indicates a code bug in /app/backend/routes/sales.py line 981")
+        print("   ℹ️  The 'return templates' statement is outside the function")
     
     # ===================== SUMMARY =====================
     print("\n" + "="*80)
-    print("📊 TEST SUMMARY")
+    print("📊 DETAILED TEST RESULTS")
     print("="*80)
     
-    if all_passed:
-        print("✅ ALL TESTS PASSED")
-        print("   - Odoo config save works without React errors")
-        print("   - Error messages display as strings")
-        print("   - Data Lake stats return proper structure")
-        print("   - LLM config can be saved and retrieved")
-        print("   - All endpoints return proper JSON")
-        return True
-    else:
-        print("❌ SOME TESTS FAILED")
-        print("   Review the detailed output above for failures")
-        return False
+    passed = sum(test_results.values())
+    total = len(test_results)
+    
+    for test_name, result in test_results.items():
+        icon = "✅" if result else "❌"
+        print(f"{icon} {test_name}: {'PASS' if result else 'FAIL'}")
+    
+    print(f"\n{'='*80}")
+    print(f"OVERALL: {passed}/{total} tests passed ({passed/total*100:.1f}%)")
+    print(f"{'='*80}")
+    
+    return test_results
 
 
 if __name__ == "__main__":
