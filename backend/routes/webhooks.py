@@ -263,6 +263,134 @@ async def process_webhook_update(
         logger.error(f"Webhook processing failed: {e}")
 
 
+
+async def process_webhook_delete(
+    entity_type: EntityType,
+    record_ids: List[int],
+    model: str,
+    start_time: datetime
+):
+    """
+    Process webhook delete with CQRS consistency.
+    
+    PRODUCTION-GRADE IMPLEMENTATION:
+    - Soft-deletes in data_lake_serving (preserves audit)
+    - Updates CQRS views immediately (opportunity_view, etc.)
+    - Handles ID normalization (int + string)
+    - Structured logging with metrics
+    - Sub-second execution
+    """
+    db = Database.get_db()
+    now = datetime.now(timezone.utc)
+    
+    # ID Normalization: Handle both int and string IDs
+    normalized_ids: List[Any] = []
+    for record_id in record_ids:
+        normalized_ids.append(record_id)  # Original (int)
+        normalized_ids.append(str(record_id))  # String version
+    
+    try:
+        # STEP 1: Soft-delete in data_lake_serving
+        result = await db.data_lake_serving.update_many(
+            {
+                "entity_type": entity_type.value,
+                "source": "odoo",
+                "data.id": {"$in": normalized_ids}
+            },
+            {
+                "$set": {
+                    "is_active": False,
+                    "deleted_at": now.isoformat(),
+                    "delete_reason": "odoo_webhook_unlink",
+                    "webhook_processed_at": now.isoformat()
+                }
+            }
+        )
+        
+        data_lake_updated = result.modified_count
+        
+        logger.info(
+            f"Webhook DELETE: {entity_type.value} | "
+            f"IDs: {record_ids} | "
+            f"data_lake_serving: {data_lake_updated} updated"
+        )
+        
+        # STEP 2: Update CQRS projections immediately
+        cqrs_updated = 0
+        
+        if entity_type == EntityType.OPPORTUNITY:
+            # Update opportunity_view (CQRS read model)
+            cqrs_result = await db.opportunity_view.update_many(
+                {"odoo_id": {"$in": normalized_ids}},
+                {
+                    "$set": {
+                        "is_active": False,
+                        "deleted_at": now.isoformat(),
+                        "delete_reason": "odoo_webhook_unlink"
+                    }
+                }
+            )
+            cqrs_updated = cqrs_result.modified_count
+            
+            logger.info(f"Webhook DELETE: opportunity_view: {cqrs_updated} updated")
+        
+        # STEP 3: Log metrics
+        processing_time = (datetime.now(timezone.utc) - start_time).total_seconds()
+        
+        logger.info(
+            f"Webhook DELETE complete | "
+            f"Entity: {entity_type.value} | "
+            f"Records: {len(record_ids)} | "
+            f"data_lake: {data_lake_updated} | "
+            f"CQRS: {cqrs_updated} | "
+            f"Latency: {processing_time:.3f}s"
+        )
+        
+        # STEP 4: Store webhook delete event for monitoring
+        await db.webhook_events.insert_one({
+            "id": str(uuid.uuid4()),
+            "event_type": "odoo_delete",
+            "model": model,
+            "entity_type": entity_type.value,
+            "record_ids": record_ids,
+            "data_lake_updated": data_lake_updated,
+            "cqrs_updated": cqrs_updated,
+            "processing_time_seconds": processing_time,
+            "timestamp": now,
+            "status": "success"
+        })
+        
+    except Exception as e:
+        # STEP 5: Log failure
+        processing_time = (datetime.now(timezone.utc) - start_time).total_seconds()
+        
+        logger.error(
+            f"Webhook DELETE FAILED | "
+            f"Entity: {entity_type.value} | "
+            f"IDs: {record_ids} | "
+            f"Error: {str(e)} | "
+            f"Latency: {processing_time:.3f}s"
+        )
+        
+        # Store failure event
+        try:
+            await db.webhook_events.insert_one({
+                "id": str(uuid.uuid4()),
+                "event_type": "odoo_delete",
+                "model": model,
+                "entity_type": entity_type.value,
+                "record_ids": record_ids,
+                "error": str(e),
+                "processing_time_seconds": processing_time,
+                "timestamp": now,
+                "status": "failed"
+            })
+        except:
+            pass  # Don't fail on logging failure
+        
+        raise
+
+
 # ===================== WEBHOOK STATUS =====================
 
 @router.get("/status")
