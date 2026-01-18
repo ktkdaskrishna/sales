@@ -769,7 +769,7 @@ const SimpleFieldMappingTab = ({ config, onRefresh }) => {
   const debouncedSave = React.useCallback(
     debounce(async (entityId, updatedMappings) => {
       try {
-        await api.put(`/integrations/odoo/mappings/${entityId}/fields`, updatedMappings);
+        await api.put(`/integrations/integrations/odoo/mappings/${entityId}/fields`, updatedMappings);
         console.log("✅ Auto-saved field mappings");
       } catch (error) {
         console.error("Auto-save failed:", error);
@@ -782,7 +782,7 @@ const SimpleFieldMappingTab = ({ config, onRefresh }) => {
     if (!selectedEntity) return;
     setSaving(true);
     try {
-      await api.put(`/odoo/mappings/${selectedEntity.id}/fields`, mappings);
+      await api.put(`/integrations/odoo/mappings/${selectedEntity.id}/fields`, mappings);
       toast.success("Field mappings saved!");
       onRefresh();
     } catch (error) {
