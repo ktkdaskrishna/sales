@@ -95,7 +95,7 @@ class CommissionTemplateCreate(BaseModel):
     name: str
     description: Optional[str] = None
     template_type: str = "tiered_attainment"  # flat, tiered_attainment, tiered_revenue, gross_margin
-    base_rate: float = 0.05
+    base_rate: float = 0.01  # Changed from 0.05 (5%) to 0.01 (1%)
     tiers: List[Dict] = []
     product_weights: Dict[str, float] = {}
     new_logo_multiplier: float = 1.5
