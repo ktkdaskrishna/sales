@@ -397,16 +397,28 @@ async def sync_departments_from_odoo(
     token_data: dict = Depends(require_role([UserRole.SUPER_ADMIN]))
 ):
     """
-    Sync departments from Odoo hr.department.
+    Sync departments from Odoo hr.department - Using v3.1 pipeline
     Departments are SOURCE OF TRUTH from Odoo - CRM departments are read-only.
     """
-    from services.odoo.sync_pipeline import OdooSyncPipelineService
+    from services.odoo.v3_adapter import OdooV3Adapter
     
     db = Database.get_db()
-    pipeline = OdooSyncPipelineService(db)
+    adapter = OdooV3Adapter(db)
     
     try:
-        result = await pipeline.sync_departments(user_id=token_data["id"])
+        result = await adapter.sync_departments()
+        
+        return DepartmentSyncResponse(
+            synced=result["synced"],
+            created=result["created"],
+            updated=result["updated"],
+            deactivated=0,
+            errors=result["errors"]
+        )
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
         
         return DepartmentSyncResponse(
             synced=result.synced,
@@ -466,16 +478,40 @@ async def sync_all_from_odoo(
     token_data: dict = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.ADMIN]))
 ):
     """
-    Trigger a full sync of all entities from Odoo.
-    Syncs: Accounts (Partners), Opportunities (CRM Leads), Invoices, Users to data_lake_serving.
+    Trigger a full sync of all entities from Odoo - Using v3.1 pipeline
+    
+    v3.1 Architecture Flow:
+    1. Fetch from Odoo via XML-RPC
+    2. Store in Raw zone (Bronze - immutable audit trail)
+    3. Process to Canonical zone (Silver - normalized, deduplicated)
+    4. Update Serving zone (Gold - UI-ready, enriched)
+    5. Emit CQRS events for read model projections
+    
+    Syncs: Accounts (Partners), Opportunities (CRM Leads), Activities, Users, Invoices
     """
-    from services.odoo.sync_pipeline import OdooSyncPipelineService
+    from services.odoo.v3_adapter import OdooV3Adapter
     
     db = Database.get_db()
-    pipeline = OdooSyncPipelineService(db)
+    adapter = OdooV3Adapter(db)
     
     try:
-        result = await pipeline.sync_data_lake(user_id=token_data["id"])
+        result = await adapter.sync_all()
+        
+        return OdooFullSyncResponse(
+            success=not result["errors"],
+            message=f"Synced {result['synced']} records across all entities",
+            synced_entities=result.get("entity_results", {}),
+            errors=result["errors"],
+            duration_seconds=0  # Can be tracked if needed
+        )
+    except Exception as e:
+        logger.error(f"Full sync failed: {e}", exc_info=True)
+        return OdooFullSyncResponse(
+            success=False,
+            message=f"Sync failed: {str(e)}",
+            synced_entities={},
+            errors=[str(e)]
+        )
         
         return OdooFullSyncResponse(
             success=result["success"],
