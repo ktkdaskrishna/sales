@@ -33,7 +33,7 @@
         "flow": "Dashboard data loading",
         "issue": "CORS errors when accessing backend - frontend trying to access wrong backend URL",
         "affected_selectors": ["[data-testid=\"dashboard-page\"]"],
-        "details": "Frontend making requests to https://cqrs-sales.preview.emergentagent.com instead of configured URL"
+        "details": "Frontend making requests to https://ai-sales-platform-4.preview.emergentagent.com instead of configured URL"
       },
       {
         "flow": "User logout",

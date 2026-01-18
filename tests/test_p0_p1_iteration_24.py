@@ -11,7 +11,7 @@ import requests
 import os
 from datetime import datetime, timezone
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://cqrs-sales.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://ai-sales-platform-4.preview.emergentagent.com').rstrip('/')
 
 # Test credentials
 SUPER_ADMIN = {"email": "superadmin@salescommand.com", "password": "demo123"}

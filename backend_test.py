@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 
 class UATFixesTester:
     """Test UAT fixes comprehensively"""
-    def __init__(self, base_url="https://cqrs-sales.preview.emergentagent.com"):
+    def __init__(self, base_url="https://ai-sales-platform-4.preview.emergentagent.com"):
         self.base_url = base_url
         self.token = None
         self.tests_run = 0

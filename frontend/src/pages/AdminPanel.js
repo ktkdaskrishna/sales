@@ -827,14 +827,14 @@ const AdminPanel = () => {
                       <Label>Webhook URL</Label>
                       <div className="flex gap-2">
                         <Input
-                          value="https://cqrs-sales.preview.emergentagent.com/api/webhooks/odoo"
+                          value="https://ai-sales-platform-4.preview.emergentagent.com/api/webhooks/odoo"
                           readOnly
                           className="font-mono text-sm"
                         />
                         <Button
                           size="sm"
                           onClick={() => {
-                            navigator.clipboard.writeText('https://cqrs-sales.preview.emergentagent.com/api/webhooks/odoo');
+                            navigator.clipboard.writeText('https://ai-sales-platform-4.preview.emergentagent.com/api/webhooks/odoo');
                             setSuccess('Webhook URL copied!');
                           }}
                         >
@@ -868,7 +868,7 @@ const AdminPanel = () => {
                       <pre className="bg-slate-900 text-slate-100 p-4 rounded text-xs overflow-x-auto">
 {`import requests
 requests.post(
-    'https://cqrs-sales.preview.emergentagent.com/api/webhooks/odoo',
+    'https://ai-sales-platform-4.preview.emergentagent.com/api/webhooks/odoo',
     json={
         'model': 'res.partner',
         'action': 'unlink',

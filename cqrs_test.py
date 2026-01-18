@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 from typing import Dict, List, Any, Optional
 
 class CQRSSystemTester:
-    def __init__(self, base_url="https://cqrs-sales.preview.emergentagent.com"):
+    def __init__(self, base_url="https://ai-sales-platform-4.preview.emergentagent.com"):
         self.base_url = base_url
         self.token = None
         self.tests_run = 0
