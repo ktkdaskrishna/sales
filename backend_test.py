@@ -1000,9 +1000,9 @@ def test_odoo_config_save_and_admin_features():
     # Test 6: Commission Templates
     print("\n🔍 Test 6: Commission Templates")
     success, templates = tester.run_test(
-        "GET /api/sales/commission-templates",
+        "GET /api/commission-templates",
         "GET",
-        "sales/commission-templates",
+        "commission-templates",
         200
     )
     
