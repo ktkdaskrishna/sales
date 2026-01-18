@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 import logging
 import hmac
 import hashlib
+import uuid
 
 from models.base import EntityType, IntegrationType, SyncStatus
 from services.sync.service import SyncService
