@@ -198,6 +198,184 @@ async def update_role(
 async def delete_role(role_id: str, token_data: dict = Depends(require_super_admin)):
     """Delete a role"""
     db = Database.get_db()
+
+
+
+# ===================== WEBHOOK CONFIGURATION =====================
+
+@router.get("/webhooks/status")
+async def get_webhook_status(token_data: dict = Depends(require_super_admin)):
+    """Get webhook configuration status and recent events"""
+    db = Database.get_db()
+    
+    # Get integration config
+    intg = await db.integrations.find_one({"integration_type": "odoo"})
+    odoo_configured = bool(intg and intg.get("config", {}).get("url"))
+    
+    # Get webhook URL (use environment or integration config)
+    from core.config import settings
+    base_url = settings.CORS_ORIGINS.split(',')[0] if settings.CORS_ORIGINS != '*' else 'https://your-app-url.com'
+    webhook_url = f"{base_url}/api/webhooks/odoo"
+    webhook_secret = settings.ODOO_API_KEY or "YOUR_ODOO_API_KEY"
+    
+    # Get recent webhook events
+    recent_events = await db.webhook_events.find(
+        {},
+        {"_id": 0}
+    ).sort("timestamp", -1).limit(10).to_list(10) if hasattr(db, 'webhook_events') else []
+    
+    # Count successful vs failed
+    success_count = len([e for e in recent_events if e.get("status") == "success"])
+    failed_count = len([e for e in recent_events if e.get("status") == "failed"])
+    
+    return {
+        "odoo_configured": odoo_configured,
+        "webhook_url": webhook_url,
+        "webhook_secret": webhook_secret,
+        "supported_models": ["res.partner", "crm.lead", "account.move", "mail.activity", "mail.message"],
+        "recent_events": recent_events,
+        "statistics": {
+            "total_recent": len(recent_events),
+            "successful": success_count,
+            "failed": failed_count
+        },
+        "setup_instructions": {
+            "step1": "Go to Odoo Settings → Technical → Automation → Automated Actions",
+            "step2": "Create action for model 'res.partner' (Accounts)",
+            "step3": "Set Trigger: Before → Delete",
+            "step4": "Set Action: Execute Python Code",
+            "step5": f"Paste code (see 'sample_code' below)",
+            "sample_code": f"""import requests
+try:
+    requests.post(
+        '{webhook_url}',
+        json={{
+            'model': 'res.partner',
+            'action': 'unlink',
+            'record_ids': record.ids
+        }},
+        headers={{'X-Odoo-Webhook-Secret': '{webhook_secret}'}},
+        timeout=5
+    )
+except Exception as e:
+    pass  # Don't block deletion if webhook fails
+"""
+        }
+    }
+
+
+@router.get("/sync/config")
+async def get_sync_config(token_data: dict = Depends(require_super_admin)):
+    """Get current auto-sync configuration"""
+    db = Database.get_db()
+    
+    # Get sync config (stored in integrations or config collection)
+    config = await db.sync_config.find_one({}, {"_id": 0}) if hasattr(db, 'sync_config') else None
+    
+    if not config:
+        # Return defaults
+        config = {
+            "enabled": True,
+            "interval_minutes": 5,
+            "last_sync": None
+        }
+    
+    # Get last sync time from integration
+    intg = await db.integrations.find_one({"integration_type": "odoo"})
+    last_sync = intg.get("last_sync") if intg else None
+    
+    return {
+        "auto_sync_enabled": config.get("enabled", True),
+        "interval_minutes": config.get("interval_minutes", 5),
+        "last_sync": last_sync,
+        "next_sync_estimate": "In ~5 minutes" if config.get("enabled") else "Disabled",
+        "available_intervals": [1, 5, 15, 30, 60]
+    }
+
+
+@router.post("/sync/config")
+async def update_sync_config(
+    enabled: bool,
+    interval_minutes: int,
+    token_data: dict = Depends(require_super_admin)
+):
+    """
+    Update auto-sync configuration.
+    
+    Args:
+        enabled: Enable/disable auto-sync
+        interval_minutes: Sync interval (1, 5, 15, 30, or 60 minutes)
+    """
+    db = Database.get_db()
+    
+    # Validate interval
+    valid_intervals = [1, 5, 15, 30, 60]
+    if interval_minutes not in valid_intervals:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid interval. Must be one of: {valid_intervals}"
+        )
+    
+    # Store config
+    await db.sync_config.update_one(
+        {},
+        {
+            "$set": {
+                "enabled": enabled,
+                "interval_minutes": interval_minutes,
+                "updated_at": datetime.now(timezone.utc),
+                "updated_by": token_data["id"]
+            }
+        },
+        upsert=True
+    )
+    
+    logger.info(
+        f"Sync config updated by {token_data.get('email')}: "
+        f"enabled={enabled}, interval={interval_minutes} min"
+    )
+    
+    # Note: Actual scheduler restart requires service restart
+    # For now, this just stores the preference
+    return {
+        "message": "Sync configuration updated",
+        "enabled": enabled,
+        "interval_minutes": interval_minutes,
+        "note": "Scheduler will use new interval on next restart. For immediate effect, restart the backend service."
+    }
+
+
+@router.post("/sync/trigger")
+async def trigger_manual_sync(
+    background_tasks: BackgroundTasks,
+    token_data: dict = Depends(require_super_admin)
+):
+    """
+    Manually trigger an Odoo sync.
+    Useful for immediate data refresh without waiting for scheduled sync.
+    """
+    from services.odoo.sync_pipeline import OdooSyncPipelineService
+    
+    db = Database.get_db()
+    
+    # Trigger sync in background
+    async def run_sync():
+        try:
+            pipeline = OdooSyncPipelineService(db)
+            result = await pipeline.sync_data_lake(user_id=token_data["id"])
+            logger.info(f"Manual sync triggered by {token_data.get('email')}: {result.get('success')}")
+        except Exception as e:
+            logger.error(f"Manual sync failed: {e}")
+    
+    background_tasks.add_task(run_sync)
+    
+    return {
+        "message": "Sync triggered",
+        "triggered_by": token_data.get("email"),
+        "status": "running",
+        "note": "Check sync status in a few seconds"
+    }
+
     rbac = RBACService(db)
     
     role = await rbac.get_role_by_id(role_id)
