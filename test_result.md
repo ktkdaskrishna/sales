@@ -365,6 +365,127 @@ agent_communication:
         agent: "testing"
         comment: "✅ PASS - GET /api/goals/team/subordinates returns correct team hierarchy. Response includes: is_manager flag (boolean) and subordinates list (array of team members). Tested with 3 users: superadmin (is_manager=false, 0 subordinates), vinsha.nair (is_manager=true, 1 subordinate: Zakariya), z.albaloushi (is_manager=false, 0 subordinates). Team hierarchy correctly reflects manager-subordinate relationships from CQRS user_profiles."
 
+frontend:
+  - task: "UI Test - Authentication & Login"
+    implemented: true
+    working: true
+    file: "frontend/src/pages/Login.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ PASSED - Login page loads correctly. Email/password authentication working with credentials superadmin@salescommand.com / demo123. Successfully redirects to dashboard after login. All navigation items appear in sidebar."
+  
+  - task: "UI Test - Dashboard"
+    implemented: true
+    working: true
+    file: "frontend/src/pages/SalesDashboard.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ PASSED - Dashboard loads with all 4 metrics (Pipeline Value, Won Revenue, Active Opportunities, Total Opportunities). Found 11 opportunity cards displaying correctly with activity counts (completed/pending). Clicking opportunity card opens detail panel with all tabs: Overview, Activities, Communication, Deal Confidence. All functionality working as expected."
+  
+  - task: "UI Test - Opportunities Page"
+    implemented: true
+    working: true
+    file: "frontend/src/pages/Opportunities.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ PASSED - Opportunities page loads correctly. Kanban view displays 12 opportunity cards in correct stages. Unified search working (tested with 'ministry'). Table view shows Owner column with names (not '—'). Deleted opportunities NOT showing. Minor: DOM detachment error when clicking card after view switch (non-critical, doesn't affect core functionality)."
+  
+  - task: "UI Test - Teams Page"
+    implemented: true
+    working: true
+    file: "frontend/src/pages/Teams.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ PASSED - Teams page loads with team data visible. 'New Team' button opens creation modal correctly. Team cards display type badge and member count as expected."
+  
+  - task: "UI Test - Portfolios Page"
+    implemented: true
+    working: true
+    file: "frontend/src/pages/Portfolios.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ PASSED - Portfolios page loads correctly. 'New Portfolio' button opens creation modal. Portfolio creation form displays properly."
+  
+  - task: "UI Test - Initiatives Page"
+    implemented: true
+    working: true
+    file: "frontend/src/pages/Initiatives.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ PASSED - Initiatives page loads with status filters (all, planning, active, completed) working correctly. 'New Initiative' button opens creation modal. Initiative creation form functional."
+  
+  - task: "UI Test - Activity Page"
+    implemented: true
+    working: true
+    file: "frontend/src/pages/ActivityTimeline.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ PASSED - Activity page shows only business activities (Document, Meeting, Email). System events (user_login) correctly filtered out. Activity details display properly (assignee, opportunity, notes)."
+  
+  - task: "UI Test - Admin Panel"
+    implemented: true
+    working: true
+    file: "frontend/src/pages/AdminPanel.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ PASSED - Admin panel accessible. 'Webhooks & Sync' tab visible and clickable. Webhook configuration section appears when tab clicked. 'Sync Now' button present."
+  
+  - task: "UI Test - Accounts Page"
+    implemented: true
+    working: true
+    file: "frontend/src/pages/Accounts.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ PASSED - Accounts page loads correctly. Unified search working (tested with 'ministry'). Deleted accounts (TEST, AMC Inc) are NOT showing - proper filtering confirmed."
+  
+  - task: "UI Test - Invoices Page"
+    implemented: true
+    working: true
+    file: "frontend/src/pages/Invoices.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ PASSED - Invoices page loads correctly. Unified search working (tested with 'paid' status). Invoice table displays with proper columns (Invoice #, Customer, Total, Amount Due, Status, Invoice Date, Due Date). Note: Test request mentioned 'Owner column' but invoices table doesn't have this column - it has Customer column instead."
+
 agent_communication:
   - agent: "testing"
     message: "UAT FIXES COMPREHENSIVE TESTING COMPLETE - All 5 UAT fixes tested successfully across 3 user roles (superadmin, manager, sales rep). Results: 16/16 tests PASSED (100% success rate). Test coverage: (1) Activity API endpoints - array response and stats object verified, (2) Sync integrity - synced_entities counts and soft-delete tracking confirmed, (3) Enhanced receivables - salesperson and account_id fields present in all invoices, (4) Account 360° view - activities from both sources and activity_summary metrics working, (5) Goals team assignment - is_manager flag and subordinates list correctly populated. No critical issues found. All endpoints return proper response structures with required fields."
