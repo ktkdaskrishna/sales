@@ -931,6 +931,9 @@ async def get_commission_templates(
                 ]
             }
         ]
+        templates = default_templates
+    
+    return templates
 
 
 @router.post("/users/{user_id}/commission-template")
@@ -977,8 +980,6 @@ async def assign_commission_template_to_user(
 
 
 # ===================== ACCOUNTS =====================
-    
-    return templates
 
 @router.post("/commission-templates")
 async def create_commission_template(
