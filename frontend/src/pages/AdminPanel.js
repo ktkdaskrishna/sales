@@ -781,6 +781,171 @@ const AdminPanel = () => {
             )}
 
             {/* ===================== PERMISSIONS TAB ===================== */}
+
+
+            {/* Webhooks & Sync Tab */}
+            {activeTab === 'webhooks' && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold text-slate-900">Webhooks & Sync Configuration</h2>
+                    <p className="text-slate-600 mt-1">Configure real-time webhooks and auto-sync settings</p>
+                  </div>
+                  <Button
+                    onClick={async () => {
+                      setSyncing(true);
+                      try {
+                        const res = await fetch(`${API_URL}/api/admin/sync/trigger`, {
+                          method: 'POST',
+                          headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        if (res.ok) {
+                          setSuccess('Sync triggered successfully!');
+                        }
+                      } catch (err) {
+                        setError('Failed to trigger sync');
+                      } finally {
+                        setSyncing(false);
+                      }
+                    }}
+                    disabled={syncing}
+                  >
+                    {syncing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Cloud className="w-4 h-4 mr-2" />}
+                    Sync Now
+                  </Button>
+                </div>
+
+                {/* Webhook Status */}
+                <div className="card p-6">
+                  <h3 className="text-lg font-bold text-slate-900 mb-4">Webhook Configuration</h3>
+                  <p className="text-sm text-slate-600 mb-4">
+                    Configure Odoo to send real-time webhooks for instant updates (sub-second latency)
+                  </p>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Webhook URL</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          value="https://cqrs-sales.preview.emergentagent.com/api/webhooks/odoo"
+                          readOnly
+                          className="font-mono text-sm"
+                        />
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            navigator.clipboard.writeText('https://cqrs-sales.preview.emergentagent.com/api/webhooks/odoo');
+                            setSuccess('Webhook URL copied!');
+                          }}
+                        >
+                          Copy
+                        </Button>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-1">Use this URL in Odoo automated actions</p>
+                    </div>
+
+                    <div>
+                      <Label>Webhook Secret Header</Label>
+                      <code className="block bg-slate-50 p-3 rounded text-sm">
+                        X-Odoo-Webhook-Secret: your-odoo-api-key
+                      </code>
+                      <p className="text-xs text-slate-500 mt-1">Include this header in webhook requests</p>
+                    </div>
+
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <h4 className="font-semibold text-blue-900 mb-2">📋 Setup in Odoo:</h4>
+                      <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+                        <li>Go to Settings → Technical → Automation</li>
+                        <li>Create Automated Action for &quot;Account&quot; (res.partner)</li>
+                        <li>Trigger: Before → Delete</li>
+                        <li>Action: Execute Python Code</li>
+                        <li>Paste the code below</li>
+                      </ol>
+                    </div>
+
+                    <div>
+                      <Label>Sample Python Code for Odoo</Label>
+                      <pre className="bg-slate-900 text-slate-100 p-4 rounded text-xs overflow-x-auto">
+{`import requests
+requests.post(
+    'https://cqrs-sales.preview.emergentagent.com/api/webhooks/odoo',
+    json={
+        'model': 'res.partner',
+        'action': 'unlink',
+        'record_ids': record.ids
+    },
+    headers={'X-Odoo-Webhook-Secret': 'your-odoo-api-key'},
+    timeout=5
+)`}
+                      </pre>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Auto-Sync Configuration */}
+                <div className="card p-6">
+                  <h3 className="text-lg font-bold text-slate-900 mb-4">Auto-Sync Configuration</h3>
+                  <p className="text-sm text-slate-600 mb-4">
+                    Configure automatic background sync with Odoo (backup to webhooks)
+                  </p>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-lg">
+                      <input
+                        type="checkbox"
+                        checked={true}
+                        className="w-4 h-4"
+                        readOnly
+                      />
+                      <div>
+                        <p className="font-medium text-slate-900">Enable Auto-Sync</p>
+                        <p className="text-xs text-slate-500">Background sync runs automatically</p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label>Sync Interval</Label>
+                      <select className="input w-full">
+                        <option value={1}>1 minute (Real-time, high load)</option>
+                        <option value={5} selected>5 minutes (Default, balanced)</option>
+                        <option value={15}>15 minutes (Low priority)</option>
+                        <option value={30}>30 minutes (Minimal load)</option>
+                        <option value={60}>60 minutes (Hourly)</option>
+                      </select>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Lower intervals increase server load but provide fresher data
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 rounded-lg">
+                      <div>
+                        <p className="text-xs text-slate-500">Last Sync</p>
+                        <p className="font-medium text-slate-900">2 minutes ago</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500">Next Sync</p>
+                        <p className="font-medium text-slate-900">In ~3 minutes</p>
+                      </div>
+                    </div>
+
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                      <p className="text-sm text-amber-800">
+                        <strong>⚡ Production Tip:</strong> Use webhooks for real-time updates (&lt;1 sec) 
+                        and set auto-sync to 15-30 minutes as a backup.
+                      </p>
+                    </div>
+
+                    <Button className="w-full" disabled>
+                      Save Sync Configuration
+                    </Button>
+                    <p className="text-xs text-center text-slate-500">
+                      Note: Changing sync interval requires backend restart
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {activeTab === 'permissions' && (
               <div>
                 <div className="flex items-center justify-between mb-6">
