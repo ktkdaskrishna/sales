@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone
 import uuid
+import logging
 
 from models.base import (
     IntegrationType, EntityType, IntegrationConfig,
@@ -19,6 +20,7 @@ from services.data_lake.manager import DataLakeManager
 from core.database import Database
 from core.config import settings
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/integrations", tags=["Integrations"])
 
 
