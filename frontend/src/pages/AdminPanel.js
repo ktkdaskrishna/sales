@@ -353,6 +353,7 @@ const AdminPanel = () => {
     { id: 'targets', label: 'Sales Targets', icon: Target },
     { id: 'bluesheet', label: 'Deal Confidence', icon: Brain },
     { id: 'departments', label: 'Departments', icon: Building2 },
+    { id: 'webhooks', label: 'Webhooks & Sync', icon: Cloud },
     { id: 'permissions', label: 'All Permissions', icon: Settings },
   ];
 
