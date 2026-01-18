@@ -84,11 +84,19 @@ const OdooIntegrationHub = () => {
     }
   };
 
-  const handleTestConnection = async () => {
+  const handleTestConnection = async (credentials) => {
     setTestingConnection(true);
     setConnectionStatus(null);
     try {
-      const response = await api.post("/integrations/odoo/test");
+      // Test endpoint requires full credentials
+      const payload = {
+        url: credentials.url,
+        database: credentials.database,
+        username: credentials.username,
+        api_key: credentials.api_key,
+        enabled_entities: ["account", "opportunity"]
+      };
+      const response = await api.post("/integrations/odoo/test", payload);
       setConnectionStatus(response.data);
       if (response.data.success) {
         toast.success("Connection successful!");
