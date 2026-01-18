@@ -94,7 +94,10 @@ const AdminPanel = () => {
 
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+    if (activeTab === 'ai-llm') {
+      fetchLlmConfig();
+    }
+  }, [fetchData, activeTab]);
 
   // ===================== ROLE CRUD =====================
   const saveRole = async (roleData) => {
