@@ -1268,7 +1268,15 @@ async def get_opportunity_messages(
             "subtype_name": msg.get("subtype_name"),
             "author_name": msg.get("author_name", "System"),
             "author_id": msg.get("author_id"),
-
+            "email_from": msg.get("email_from"),
+            "subject": msg.get("subject"),
+        })
+    
+    return {
+        "messages": messages,
+        "count": len(messages),
+        "opportunity_id": opp_id
+    }
 
 
 @router.patch("/activities/{activity_id}/complete")
