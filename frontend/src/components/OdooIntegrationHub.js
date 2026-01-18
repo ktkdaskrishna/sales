@@ -1445,9 +1445,10 @@ const SyncLogsTab = () => {
     setLoading(true);
     try {
       const response = await api.get("/integrations/odoo/sync-logs?limit=50");
-      setLogs(response.data);
+      setLogs(response.data.logs || []);  // Extract logs array from response
     } catch (error) {
       toast.error("Failed to load sync logs");
+      setLogs([]);  // Set empty array on error
     } finally {
       setLoading(false);
     }
