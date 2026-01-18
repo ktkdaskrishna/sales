@@ -119,22 +119,45 @@ async def get_integration(
         raise HTTPException(status_code=404, detail="Integration not found")
     
     config_summary = {}
+    connection_status = {}
+    
     if intg.get("config"):
         config = intg["config"]
         if "url" in config:
             config_summary["url"] = config["url"]
         if "database" in config:
             config_summary["database"] = config["database"]
+        
+        # For Odoo, check if we have credentials to determine connection status
+        if integration_type == IntegrationType.ODOO:
+            has_credentials = all([
+                config.get("url"),
+                config.get("database"),
+                config.get("username"),
+                config.get("api_key")
+            ])
+            connection_status = {
+                "is_connected": has_credentials and intg.get("sync_status") != "error",
+                "url": config.get("url"),
+                "database": config.get("database"),
+                "username": config.get("username"),
+                "api_key": "***" + config.get("api_key", "")[-4:] if config.get("api_key") else None,
+                "odoo_version": "17+"  # Default, can be updated after test
+            }
     
-    return IntegrationResponse(
-        id=intg.get("id", ""),
-        integration_type=intg.get("integration_type", ""),
-        enabled=intg.get("enabled", False),
-        last_sync=intg.get("last_sync"),
-        sync_status=intg.get("sync_status", "pending"),
-        error_message=intg.get("error_message"),
-        config_summary=config_summary
-    )
+    # Build response with additional connection info for frontend compatibility
+    response_data = {
+        "id": intg.get("id", ""),
+        "integration_type": intg.get("integration_type", ""),
+        "enabled": intg.get("enabled", False),
+        "last_sync": intg.get("last_sync"),
+        "sync_status": intg.get("sync_status", "pending"),
+        "error_message": intg.get("error_message"),
+        "config_summary": config_summary,
+        "connection": connection_status if connection_status else None
+    }
+    
+    return response_data
 
 
 # ===================== ODOO SPECIFIC ROUTES =====================
