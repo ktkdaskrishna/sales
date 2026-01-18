@@ -663,7 +663,11 @@ async def assign_role_to_user(
     
     return {
         "message": "Role assigned successfully",
-
+        "user_id": user_id,
+        "role": role.get("name"),
+        "department": dept.get("name") if department_id and dept else None,
+        "next_step": "User can now be approved"
+    }
 
 
 @router.post("/users/cleanup-inconsistent")
