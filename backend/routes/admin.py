@@ -753,12 +753,6 @@ async def cleanup_inconsistent_users(
         ]
     }
 
-        "user_id": user_id,
-        "role": role.get("name"),
-        "department": dept.get("name") if department_id and dept else None,
-        "next_step": "User can now be approved"
-    }
-
 
 @router.post("/users/{user_id}/relink")
 async def relink_user_to_odoo(
