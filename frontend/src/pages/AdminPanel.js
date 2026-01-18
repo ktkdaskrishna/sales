@@ -1037,6 +1037,366 @@ requests.post(
               </div>
             )}
 
+            {/* ===================== INTEGRATIONS TAB ===================== */}
+            {activeTab === 'integrations' && (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-900">Integrations</h2>
+                  <p className="text-slate-600 mt-1">Manage third-party integrations and data sources</p>
+                </div>
+
+                {/* Sub-tabs for different integrations */}
+                <div className="flex gap-2 border-b border-slate-200">
+                  <button
+                    onClick={() => setIntegrationsSubTab('odoo')}
+                    className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
+                      integrationsSubTab === 'odoo'
+                        ? 'border-indigo-600 text-indigo-600'
+                        : 'border-transparent text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <Plug2 className="w-4 h-4 inline mr-2" />
+                    Odoo ERP
+                  </button>
+                  <button
+                    onClick={() => setIntegrationsSubTab('marketplace')}
+                    className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
+                      integrationsSubTab === 'marketplace'
+                        ? 'border-indigo-600 text-indigo-600'
+                        : 'border-transparent text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <Plus className="w-4 h-4 inline mr-2" />
+                    Add Integration
+                  </button>
+                </div>
+
+                {/* Odoo Integration Sub-section */}
+                {integrationsSubTab === 'odoo' && (
+                  <div className="space-y-6">
+                    {/* Webhook Configuration */}
+                    <div className="card p-6">
+                      <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                        <Zap className="w-5 h-5 text-indigo-600" />
+                        Webhook Configuration
+                      </h3>
+                      <p className="text-sm text-slate-600 mb-4">
+                        Configure Odoo to send real-time webhooks for instant updates (sub-second latency)
+                      </p>
+                      
+                      <div className="space-y-4">
+                        <div>
+                          <Label>Webhook URL</Label>
+                          <div className="flex gap-2">
+                            <Input
+                              value="https://ai-sales-platform-4.preview.emergentagent.com/api/webhooks/odoo"
+                              readOnly
+                              className="font-mono text-sm"
+                            />
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                navigator.clipboard.writeText('https://ai-sales-platform-4.preview.emergentagent.com/api/webhooks/odoo');
+                                setSuccess('Webhook URL copied!');
+                              }}
+                            >
+                              Copy
+                            </Button>
+                          </div>
+                          <p className="text-xs text-slate-500 mt-1">Use this URL in Odoo automated actions</p>
+                        </div>
+
+                        <div>
+                          <Label>Webhook Secret Header</Label>
+                          <code className="block bg-slate-50 p-3 rounded text-sm">
+                            X-Odoo-Webhook-Secret: your-odoo-api-key
+                          </code>
+                          <p className="text-xs text-slate-500 mt-1">Include this header in webhook requests</p>
+                        </div>
+
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                          <h4 className="font-semibold text-blue-900 mb-2">📋 Setup in Odoo:</h4>
+                          <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+                            <li>Go to Settings → Technical → Automation</li>
+                            <li>Create Automated Action for &quot;Account&quot; (res.partner)</li>
+                            <li>Trigger: Before → Delete</li>
+                            <li>Action: Execute Python Code</li>
+                            <li>Paste the code below</li>
+                          </ol>
+                        </div>
+
+                        <div>
+                          <Label>Sample Python Code for Odoo</Label>
+                          <pre className="bg-slate-900 text-slate-100 p-4 rounded text-xs overflow-x-auto">
+{`import requests
+requests.post(
+    'https://ai-sales-platform-4.preview.emergentagent.com/api/webhooks/odoo',
+    json={
+        'model': 'res.partner',
+        'action': 'unlink',
+        'record_ids': record.ids
+    },
+    headers={'X-Odoo-Webhook-Secret': 'your-odoo-api-key'},
+    timeout=5
+)`}
+                          </pre>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Auto-Sync Configuration */}
+                    <div className="card p-6">
+                      <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                        <Cloud className="w-5 h-5 text-indigo-600" />
+                        Auto-Sync Configuration
+                      </h3>
+                      <p className="text-sm text-slate-600 mb-4">
+                        Configure automatic background sync with Odoo (backup to webhooks)
+                      </p>
+                      
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-lg">
+                          <input
+                            type="checkbox"
+                            checked={true}
+                            className="w-4 h-4"
+                            readOnly
+                          />
+                          <div>
+                            <p className="font-medium text-slate-900">Enable Auto-Sync</p>
+                            <p className="text-xs text-slate-500">Background sync runs automatically</p>
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label>Sync Interval</Label>
+                          <select className="input w-full">
+                            <option value={1}>1 minute (Real-time, high load)</option>
+                            <option value={5}>5 minutes (Default, balanced)</option>
+                            <option value={15}>15 minutes (Low priority)</option>
+                            <option value={30}>30 minutes (Minimal load)</option>
+                            <option value={60}>60 minutes (Hourly)</option>
+                          </select>
+                          <p className="text-xs text-slate-500 mt-1">
+                            Lower intervals increase server load but provide fresher data
+                          </p>
+                        </div>
+
+                        <Button
+                          onClick={async () => {
+                            setSyncing(true);
+                            try {
+                              const res = await fetch(`${API_URL}/api/admin/sync/trigger`, {
+                                method: 'POST',
+                                headers: { 'Authorization': `Bearer ${token}` }
+                              });
+                              if (res.ok) {
+                                setSuccess('Sync triggered successfully!');
+                              }
+                            } catch (err) {
+                              setError('Failed to trigger sync');
+                            } finally {
+                              setSyncing(false);
+                            }
+                          }}
+                          disabled={syncing}
+                          className="w-full"
+                        >
+                          {syncing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Cloud className="w-4 h-4 mr-2" />}
+                          Sync Now
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* API Configuration - Placeholder for future */}
+                    <div className="card p-6 border-dashed">
+                      <h3 className="text-lg font-bold text-slate-900 mb-2 flex items-center gap-2">
+                        <Settings className="w-5 h-5 text-slate-400" />
+                        API Configuration
+                      </h3>
+                      <p className="text-sm text-slate-500 mb-4">
+                        Configure Odoo API connection settings (URL, database, credentials)
+                      </p>
+                      <p className="text-xs text-slate-400 italic">
+                        Coming soon - Full API configuration UI
+                      </p>
+                    </div>
+
+                    {/* Field Mapping - Placeholder for future */}
+                    <div className="card p-6 border-dashed">
+                      <h3 className="text-lg font-bold text-slate-900 mb-2 flex items-center gap-2">
+                        <Settings className="w-5 h-5 text-slate-400" />
+                        Field Mapping
+                      </h3>
+                      <p className="text-sm text-slate-500 mb-4">
+                        Configure field mappings between Odoo and your system
+                      </p>
+                      <p className="text-xs text-slate-400 italic">
+                        Coming soon - Field mapping configuration UI
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Marketplace Sub-section */}
+                {integrationsSubTab === 'marketplace' && (
+                  <div className="card p-8 text-center">
+                    <Plus className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-bold text-slate-900 mb-2">Integration Marketplace</h3>
+                    <p className="text-slate-600 mb-4">
+                      Browse and install new integrations for your platform
+                    </p>
+                    <p className="text-xs text-slate-400 italic">
+                      Coming soon - Browse Salesforce, HubSpot, and more integrations
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ===================== AI & LLM TAB ===================== */}
+            {activeTab === 'ai-llm' && (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+                    <Sparkles className="w-6 h-6 text-indigo-600" />
+                    AI & LLM Configuration
+                  </h2>
+                  <p className="text-slate-600 mt-1">Configure AI providers and models for all AI features</p>
+                </div>
+
+                {loadingLlm ? (
+                  <div className="flex items-center justify-center h-64">
+                    <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+                  </div>
+                ) : (
+                  <div className="card p-6">
+                    <div className="space-y-6">
+                      {/* Provider Selection */}
+                      <div>
+                        <Label>Provider</Label>
+                        <select
+                          value={llmConfig?.provider || 'openai'}
+                          onChange={(e) => setLlmConfig({ ...llmConfig, provider: e.target.value })}
+                          className="input w-full"
+                        >
+                          <option value="openai">OpenAI</option>
+                          <option value="anthropic">Anthropic (Claude)</option>
+                          <option value="google">Google (Gemini)</option>
+                          <option value="azure">Azure OpenAI</option>
+                        </select>
+                        <p className="text-xs text-slate-500 mt-1">
+                          Select your preferred LLM provider
+                        </p>
+                      </div>
+
+                      {/* Model Selection */}
+                      <div>
+                        <Label>Model</Label>
+                        <Input
+                          value={llmConfig?.model || ''}
+                          onChange={(e) => setLlmConfig({ ...llmConfig, model: e.target.value })}
+                          placeholder="e.g., gpt-4, claude-3-sonnet, gemini-pro"
+                          className="w-full"
+                        />
+                        <p className="text-xs text-slate-500 mt-1">
+                          Specify the model to use for AI features
+                        </p>
+                      </div>
+
+                      {/* API Key */}
+                      <div>
+                        <Label>API Key</Label>
+                        <Input
+                          type="password"
+                          value={llmConfig?.api_key || ''}
+                          onChange={(e) => setLlmConfig({ ...llmConfig, api_key: e.target.value })}
+                          placeholder="sk-..."
+                          className="w-full font-mono text-sm"
+                        />
+                        <p className="text-xs text-slate-500 mt-1">
+                          Your API key for the selected provider
+                        </p>
+                      </div>
+
+                      {/* Base URL (Optional) */}
+                      <div>
+                        <Label>Base URL (Optional)</Label>
+                        <Input
+                          value={llmConfig?.base_url || ''}
+                          onChange={(e) => setLlmConfig({ ...llmConfig, base_url: e.target.value })}
+                          placeholder="https://api.openai.com/v1"
+                          className="w-full font-mono text-sm"
+                        />
+                        <p className="text-xs text-slate-500 mt-1">
+                          Custom base URL (leave empty for default)
+                        </p>
+                      </div>
+
+                      {/* Advanced Settings */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>Temperature</Label>
+                          <Input
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            max="2"
+                            value={llmConfig?.temperature || 0.7}
+                            onChange={(e) => setLlmConfig({ ...llmConfig, temperature: parseFloat(e.target.value) })}
+                            className="w-full"
+                          />
+                          <p className="text-xs text-slate-500 mt-1">0 = deterministic, 2 = creative</p>
+                        </div>
+                        <div>
+                          <Label>Max Tokens</Label>
+                          <Input
+                            type="number"
+                            value={llmConfig?.max_tokens || 1000}
+                            onChange={(e) => setLlmConfig({ ...llmConfig, max_tokens: parseInt(e.target.value) })}
+                            className="w-full"
+                          />
+                          <p className="text-xs text-slate-500 mt-1">Maximum response length</p>
+                        </div>
+                      </div>
+
+                      {/* Feature Usage Info */}
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h4 className="font-semibold text-blue-900 mb-2">🤖 AI Features Using This Config:</h4>
+                        <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+                          <li>Deal Confidence Analysis</li>
+                          <li>Field Mapping (Coming Soon)</li>
+                          <li>AI Chat Assistant (Coming Soon)</li>
+                          <li>Data Quality Checks (Coming Soon)</li>
+                        </ul>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex gap-3">
+                        <Button
+                          onClick={testLlmConnection}
+                          disabled={testingLlm || !llmConfig?.api_key}
+                          variant="outline"
+                          className="flex-1"
+                        >
+                          {testingLlm ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Zap className="w-4 h-4 mr-2" />}
+                          Test Connection
+                        </Button>
+                        <Button
+                          onClick={saveLlmConfig}
+                          disabled={loadingLlm || !llmConfig?.api_key}
+                          className="flex-1"
+                        >
+                          {loadingLlm ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                          Save Configuration
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {activeTab === 'permissions' && (
               <div>
                 <div className="flex items-center justify-between mb-6">
