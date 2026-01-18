@@ -619,35 +619,45 @@ async def calculate_blue_sheet_probability(
     if analysis.economic_buyer_favorable and analysis.quantifiable_value and analysis.mutual_action_plan:
         confidence = "high"
     
-    # Generate AI recommendations
+    # Generate AI recommendations using centralized LLM Service
     recommendations = []
     try:
-        # Get LLM config from database or use default
-        llm_config = await db.llm_config.find_one({}, {"_id": 0})
-        api_key = None
-        model_provider = "openai"
-        model_name = "gpt-4o"
+        from services.llm_service import LLMService
         
-        if llm_config:
-            api_key = llm_config.get("api_key") or settings.EMERGENT_LLM_KEY
-            model_provider = llm_config.get("provider", "openai")
-            model_name = llm_config.get("model", "gpt-4o")
-        else:
-            api_key = settings.EMERGENT_LLM_KEY
+        context = f"""
+        Opportunity: {opportunity.get('name')}
+        Value: ${opportunity.get('value', 0):,.0f}
+        Current Stage: {opportunity.get('stage')}
+        Calculated Probability: {calculated_probability}%
+        Product Lines: {', '.join(opportunity.get('product_lines', []))}
         
-        logger.info(f"LLM config: provider={model_provider}, model={model_name}, key_set={bool(api_key)}")
+        Blue Sheet Analysis:
+        - Economic Buyer Identified: {analysis.economic_buyer_identified}
+        - Economic Buyer Favorable: {analysis.economic_buyer_favorable}
+        - Coach Engaged: {analysis.coach_engaged}
+        - Budget Confirmed: {not analysis.budget_not_confirmed}
+        - Competition Preferred: {analysis.competition_preferred}
+        - Clear Business Results: {analysis.clear_business_results}
+        - Mutual Action Plan: {analysis.mutual_action_plan}
         
-        if api_key:
-            from emergentintegrations.llm.chat import LlmChat, UserMessage
-            import asyncio
-            
-            context = f"""
-            Opportunity: {opportunity.get('name')}
-            Value: ${opportunity.get('value', 0):,.0f}
-            Current Stage: {opportunity.get('stage')}
-            Calculated Probability: {calculated_probability}%
-            Product Lines: {', '.join(opportunity.get('product_lines', []))}
-            
+        For a cybersecurity consulting firm (services: MSSP, Application Security, Network Security, GRC),
+        provide 3 specific actionable recommendations to improve win probability. Be concise.
+        """
+        
+        # Use centralized LLM Service
+        response = await LLMService.call_llm("deal_confidence", context)
+        recommendations = [line.strip() for line in response.split("\\n") if line.strip() and len(line) > 10][:3]
+        
+        logger.info(f"LLM recommendations generated via centralized service: {len(recommendations)}")
+        
+    except Exception as e:
+        logger.warning(f"LLM recommendation error: {e}")
+        # Fallback recommendations
+        if not analysis.economic_buyer_identified:
+            recommendations.append("Identify and engage the Economic Buyer - the person with final budget authority")
+        if not analysis.coach_identified:
+            recommendations.append("Develop a Coach inside the organization who can guide your strategy")
+        if analysis.budget_not_confirmed:
             Blue Sheet Analysis:
             - Economic Buyer Identified: {analysis.economic_buyer_identified}
             - Economic Buyer Favorable: {analysis.economic_buyer_favorable}
