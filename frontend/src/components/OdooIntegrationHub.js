@@ -2,6 +2,19 @@ import React, { useState, useEffect, useCallback } from "react";
 import api from "../services/api";
 import { cn } from "../lib/utils";
 import { toast } from "sonner";
+
+// Debounce utility for auto-save
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
 import {
   Database,
   RefreshCw,
@@ -708,9 +721,15 @@ const SimpleFieldMappingTab = ({ config, onRefresh }) => {
   };
 
   const handleToggleField = (fieldId) => {
-    setMappings(mappings.map(m => 
+    const updatedMappings = mappings.map(m => 
       m.id === fieldId ? { ...m, enabled: !m.enabled } : m
-    ));
+    );
+    setMappings(updatedMappings);
+    
+    // Auto-save on toggle (real-time)
+    if (selectedEntity) {
+      debouncedSave(selectedEntity.id, updatedMappings);
+    }
   };
 
   const handleDeleteField = (fieldId) => {
@@ -719,20 +738,45 @@ const SimpleFieldMappingTab = ({ config, onRefresh }) => {
       toast.error("Cannot delete system fields. You can disable them instead.");
       return;
     }
-    setMappings(mappings.filter(m => m.id !== fieldId));
+    const updatedMappings = mappings.filter(m => m.id !== fieldId);
+    setMappings(updatedMappings);
     toast.success("Field mapping removed");
+    
+    // Auto-save on delete (real-time)
+    if (selectedEntity) {
+      debouncedSave(selectedEntity.id, updatedMappings);
+    }
   };
 
   const handleAddField = (newField) => {
-    setMappings([...mappings, {
+    const updatedMappings = [...mappings, {
       id: `custom_${Date.now()}`,
       ...newField,
       enabled: true,
       is_system: false,
-    }]);
+    }];
+    setMappings(updatedMappings);
     setShowAddModal(false);
     toast.success("Field mapping added");
+    
+    // Auto-save on add (real-time)
+    if (selectedEntity) {
+      debouncedSave(selectedEntity.id, updatedMappings);
+    }
   };
+
+  // Debounced auto-save for real-time updates
+  const debouncedSave = React.useCallback(
+    debounce(async (entityId, updatedMappings) => {
+      try {
+        await api.put(`/integrations/odoo/mappings/${entityId}/fields`, updatedMappings);
+        console.log("✅ Auto-saved field mappings");
+      } catch (error) {
+        console.error("Auto-save failed:", error);
+      }
+    }, 1500),
+    []
+  );
 
   const handleSave = async () => {
     if (!selectedEntity) return;
