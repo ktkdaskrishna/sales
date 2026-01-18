@@ -153,6 +153,7 @@ from routes.initiatives import router as initiatives_router  # NEW: Initiative t
 from api.v2_dashboard import router as v2_dashboard_router  # CQRS v2 API
 from api.v2_activities import router as v2_activities_router  # CQRS v2 Activities API
 from api.cqrs_sync_api import router as cqrs_sync_router  # CQRS sync endpoints
+from api.ai_mapping import router as ai_mapping_router  # AI Field Mapping
 
 # Import Odoo routes factory
 from odoo_routes import create_odoo_routes
@@ -174,6 +175,7 @@ api_router.include_router(initiatives_router)  # NEW: Initiative tracking
 api_router.include_router(v2_dashboard_router, prefix="/v2/dashboard")  # CQRS v2
 api_router.include_router(v2_activities_router, prefix="/v2/activities")  # CQRS v2 Activities
 api_router.include_router(cqrs_sync_router, prefix="/integrations/cqrs")  # CQRS sync with prefix
+api_router.include_router(ai_mapping_router)  # AI Field Mapping
 
 # Mount API router
 app.include_router(api_router)
