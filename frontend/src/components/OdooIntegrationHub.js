@@ -432,7 +432,7 @@ const ConnectionTab = ({ config, onUpdate, onTest, testing, status }) => {
                 {status.success ? "Connection Successful!" : "Connection Failed"}
               </p>
               <p className={cn("text-sm mt-0.5", status.success ? "text-green-600" : "text-red-600")}>
-                {status.message}
+                {typeof status.message === 'string' ? status.message : JSON.stringify(status.message)}
               </p>
             </div>
           </div>
