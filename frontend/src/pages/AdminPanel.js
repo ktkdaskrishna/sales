@@ -99,6 +99,84 @@ const AdminPanel = () => {
     }
   }, [fetchData, activeTab]);
 
+  // ===================== LLM CONFIG =====================
+  const fetchLlmConfig = async () => {
+    if (!token) return;
+    setLoadingLlm(true);
+    try {
+      const res = await fetch(`${API_URL}/api/admin/llm/config`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setLlmConfig(data.config || {
+          provider: 'openai',
+          model: 'gpt-4',
+          api_key: '',
+          base_url: null,
+          temperature: 0.7,
+          max_tokens: 1000
+        });
+      }
+    } catch (err) {
+      setError('Failed to load LLM configuration');
+    } finally {
+      setLoadingLlm(false);
+    }
+  };
+
+  const saveLlmConfig = async () => {
+    if (!token || !llmConfig) return;
+    setLoadingLlm(true);
+    try {
+      const res = await fetch(`${API_URL}/api/admin/llm/config`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(llmConfig)
+      });
+      
+      if (res.ok) {
+        setSuccess('LLM configuration saved successfully');
+      } else {
+        const data = await res.json();
+        setError(data.detail || 'Failed to save LLM configuration');
+      }
+    } catch (err) {
+      setError('Failed to save LLM configuration');
+    } finally {
+      setLoadingLlm(false);
+    }
+  };
+
+  const testLlmConnection = async () => {
+    if (!token || !llmConfig) return;
+    setTestingLlm(true);
+    try {
+      const res = await fetch(`${API_URL}/api/admin/llm/test`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(llmConfig)
+      });
+      
+      const data = await res.json();
+      if (res.ok) {
+        setSuccess('✅ LLM connection successful!');
+      } else {
+        setError(data.detail || 'LLM connection failed');
+      }
+    } catch (err) {
+      setError('Failed to test LLM connection');
+    } finally {
+      setTestingLlm(false);
+    }
+  };
+
   // ===================== ROLE CRUD =====================
   const saveRole = async (roleData) => {
     try {
