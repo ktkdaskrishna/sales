@@ -611,6 +611,65 @@ async def reject_user(
     }
 
 
+
+
+@router.patch("/users/{user_id}/assign-role")
+async def assign_role_to_user(
+    user_id: str,
+    role_id: str,
+    department_id: Optional[str] = None,
+    token_data: dict = Depends(require_super_admin)
+):
+    """
+    Assign role and optionally department to a pending user.
+    This must be done BEFORE approval.
+    
+    Workflow: Role Assignment → Department Assignment → Approval → Active
+    """
+    db = Database.get_db()
+    
+    # Get user
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Verify role exists
+    role = await db.roles.find_one({"id": role_id})
+    if not role:
+        raise HTTPException(status_code=404, detail="Role not found")
+    
+    # Verify department if provided
+    if department_id:
+        dept = await db.departments.find_one({"id": department_id})
+        if not dept:
+            raise HTTPException(status_code=404, detail="Department not found")
+    
+    # Update user
+    update_data = {
+        "role": role.get("code"),
+        "role_id": role_id,
+        "role_name": role.get("name"),
+        "updated_at": datetime.now(timezone.utc)
+    }
+    
+    if department_id:
+        dept = await db.departments.find_one({"id": department_id})
+        update_data["department_id"] = department_id
+        update_data["department_name"] = dept.get("name") if dept else None
+    
+    await db.users.update_one({"id": user_id}, {"$set": update_data})
+    
+    logger.info(f"Assigned role {role.get('name')} to user {user.get('email')}")
+    
+    return {
+        "message": "Role assigned successfully",
+        "user_id": user_id,
+        "role": role.get("name"),
+        "department": dept.get("name") if department_id and dept else None,
+        "next_step": "User can now be approved"
+    }
+
+
 @router.post("/users/{user_id}/relink")
 async def relink_user_to_odoo(
     user_id: str,
