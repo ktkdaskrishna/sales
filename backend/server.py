@@ -130,11 +130,22 @@ from api.v2_dashboard import router as v2_dashboard_router  # CQRS v2 API
 from api.v2_activities import router as v2_activities_router  # CQRS v2 Activities API
 from api.cqrs_sync_api import router as cqrs_sync_router  # CQRS sync endpoints
 
+# Create Odoo routes dynamically
+from odoo_routes import create_odoo_routes
+from services.auth.jwt_handler import get_current_user_from_token
+from services.rbac.service import require_role as rbac_require_role
+odoo_router = create_odoo_routes(
+    db=Database.get_db(),
+    get_current_user=get_current_user_from_token,
+    require_role=rbac_require_role
+)
+
 # Register routes
 api_router.include_router(auth_router)
 api_router.include_router(data_lake_router)
 api_router.include_router(integrations_router)
 api_router.include_router(webhooks_router)
+api_router.include_router(odoo_router)  # Odoo Integration Hub routes
 api_router.include_router(admin_router)
 api_router.include_router(admin_logs_router)  # Admin logging endpoints
 api_router.include_router(personal_router)
