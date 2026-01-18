@@ -35,6 +35,7 @@ const AdminPanel = () => {
   const [roles, setRoles] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [permissions, setPermissions] = useState({ permissions: [], grouped: {} });
+  const [commissionTemplates, setCommissionTemplates] = useState([]);
 
   // Modal/Edit states
   const [showRoleModal, setShowRoleModal] = useState(false);
@@ -74,17 +75,22 @@ const AdminPanel = () => {
 
     try {
       const headers = { 'Authorization': `Bearer ${token}` };
-      const [usersRes, rolesRes, deptsRes, permsRes] = await Promise.all([
+      const [usersRes, rolesRes, deptsRes, permsRes, templatesRes] = await Promise.all([
         fetch(`${API_URL}/api/admin/users`, { headers }),
         fetch(`${API_URL}/api/admin/roles`, { headers }),
         fetch(`${API_URL}/api/admin/departments`, { headers }),
-        fetch(`${API_URL}/api/admin/permissions`, { headers })
+        fetch(`${API_URL}/api/admin/permissions`, { headers }),
+        fetch(`${API_URL}/api/sales/commission-templates`, { headers })
       ]);
 
       if (usersRes.ok) setUsers((await usersRes.json()).users || []);
       if (rolesRes.ok) setRoles((await rolesRes.json()).roles || []);
       if (deptsRes.ok) setDepartments((await deptsRes.json()).departments || []);
       if (permsRes.ok) setPermissions(await permsRes.json());
+      if (templatesRes.ok) {
+        const data = await templatesRes.json();
+        setCommissionTemplates(data.templates || []);
+      }
     } catch (err) {
       setError('Failed to load data');
     } finally {
