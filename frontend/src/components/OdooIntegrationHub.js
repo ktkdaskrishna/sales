@@ -519,13 +519,13 @@ const WebhookTab = ({ config }) => {
         <pre className="text-xs bg-slate-950/70 border border-slate-800 rounded-lg p-4 overflow-x-auto">
 {`import requests
 requests.post(
-    '${webhookUrl}',
+    '` + webhookUrl + `',
     json={
         'model': env.context.get('active_model'),
         'action': 'unlink',
         'record_ids': env.context.get('active_ids', [])
     },
-    headers={'X-Odoo-Webhook-Secret': '${webhookSecret}'},
+    headers={'X-Odoo-Webhook-Secret': '` + webhookSecret + `'},
     timeout=5
 )`}
         </pre>
