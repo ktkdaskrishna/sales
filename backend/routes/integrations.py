@@ -46,6 +46,7 @@ class IntegrationResponse(BaseModel):
     sync_status: str
     error_message: Optional[str] = None
     config_summary: Dict[str, Any] = {}
+    connection: Optional[Dict[str, Any]] = None  # NEW: Connection details for Odoo
 
 
 class TestConnectionResponse(BaseModel):
