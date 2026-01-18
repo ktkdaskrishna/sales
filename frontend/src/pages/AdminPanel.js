@@ -367,7 +367,8 @@ const AdminPanel = () => {
     { id: 'targets', label: 'Sales Targets', icon: Target },
     { id: 'bluesheet', label: 'Deal Confidence', icon: Brain },
     { id: 'departments', label: 'Departments', icon: Building2 },
-    { id: 'webhooks', label: 'Webhooks & Sync', icon: Cloud },
+    { id: 'integrations', label: 'Integrations', icon: Plug2 },
+    { id: 'ai-llm', label: 'AI & LLM', icon: Sparkles },
     { id: 'permissions', label: 'All Permissions', icon: Settings },
   ];
 
