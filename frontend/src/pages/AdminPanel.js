@@ -16,7 +16,8 @@ import { configAPI } from '../services/api';
 import {
   Users, Shield, Building2, Settings, ChevronRight,
   Plus, Edit2, Trash2, Check, X, Search, AlertCircle,
-  Loader2, Save, Cloud, ChevronDown, ChevronUp, DollarSign, LayoutDashboard, Brain, Target
+  Loader2, Save, Cloud, ChevronDown, ChevronUp, DollarSign, LayoutDashboard, Brain, Target,
+  Plug2, Zap, Sparkles
 } from 'lucide-react';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || '';
@@ -49,6 +50,14 @@ const AdminPanel = () => {
   const [webhookStatus, setWebhookStatus] = useState(null);
   const [syncConfig, setSyncConfig] = useState(null);
   const [syncing, setSyncing] = useState(false);
+  
+  // LLM Configuration states
+  const [llmConfig, setLlmConfig] = useState(null);
+  const [loadingLlm, setLoadingLlm] = useState(false);
+  const [testingLlm, setTestingLlm] = useState(false);
+  
+  // Integrations sub-tab
+  const [integrationsSubTab, setIntegrationsSubTab] = useState('odoo');
 
   // Check super admin access
   useEffect(() => {
