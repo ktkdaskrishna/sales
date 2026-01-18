@@ -21,6 +21,7 @@ from .mapper import (
     OdooOpportunityMapper,
     OdooActivityMapper,
     OdooUserMapper,
+    OdooInvoiceMapper,
 )
 from .validator import OdooValidator
 from .normalizer import OdooNormalizer
@@ -64,6 +65,7 @@ class OdooSyncPipeline(ISyncPipeline):
         'opportunity': OdooOpportunityMapper,
         'activity': OdooActivityMapper,
         'user': OdooUserMapper,
+        'invoice': OdooInvoiceMapper,
     }
     
     def __init__(self, config: Dict[str, Any], db: AsyncIOMotorDatabase):
