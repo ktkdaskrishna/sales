@@ -565,10 +565,10 @@ async def sync_odoo_entity(
         result = await adapter._pipeline.execute(entity_type, mode="full")
         
         return {
-            "synced": result.total_count,
-            "created": result.created_count,
-            "updated": result.updated_count,
-            "failed": result.failed_count,
+            "synced": result.records_created + result.records_updated,
+            "created": result.records_created,
+            "updated": result.records_updated,
+            "failed": result.records_failed,
             "errors": [str(e) for e in result.errors]
         }
     except HTTPException:
@@ -757,12 +757,15 @@ async def get_sync_health(
 async def update_odoo_field_mappings(
     mapping_id: str,
     field_mappings: List[Dict[str, Any]],
+    background_tasks: BackgroundTasks,
     token_data: dict = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.ADMIN]))
 ):
     """
     Update field mappings for a specific Odoo entity
     
     Called from Field Mapping tab when user clicks "Save Mappings"
+    
+    NEW: Auto-triggers backfill job when new fields are added
     """
     db = Database.get_db()
     
@@ -779,6 +782,11 @@ async def update_odoo_field_mappings(
         if mapping_idx is None:
             raise HTTPException(status_code=404, detail=f"Mapping {mapping_id} not found")
         
+        # Get old field mappings to detect new additions
+        old_mapping = entity_mappings[mapping_idx]
+        old_fields = set([fm.get("source_field") for fm in old_mapping.get("field_mappings", [])])
+        new_fields = set([fm.get("source_field") for fm in field_mappings]) - old_fields
+        
         # Update field mappings
         update_path = f"odoo_integration.entity_mappings.{mapping_idx}.field_mappings"
         await db.system_config.update_one(
@@ -786,7 +794,27 @@ async def update_odoo_field_mappings(
             {"$set": {update_path: field_mappings}}
         )
         
-        return {"message": "Field mappings updated successfully", "count": len(field_mappings)}
+        # If new fields detected, trigger backfill
+        backfill_triggered = False
+        if new_fields:
+            logger.info(f"New fields detected: {new_fields}. Triggering backfill...")
+            
+            # Add backfill task to background
+            from services.odoo.backfill_service import trigger_backfill
+            background_tasks.add_task(
+                trigger_backfill,
+                db=db,
+                mapping_id=mapping_id,
+                new_fields=list(new_fields)
+            )
+            backfill_triggered = True
+        
+        return {
+            "message": "Field mappings updated successfully",
+            "count": len(field_mappings),
+            "new_fields_added": list(new_fields) if new_fields else [],
+            "backfill_triggered": backfill_triggered
+        }
     except HTTPException:
         raise
     except Exception as e:

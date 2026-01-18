@@ -111,12 +111,13 @@ class OdooV3Adapter:
             # Execute v3.1 pipeline for users
             result = await self._pipeline.execute("user", mode="full")
             
+            # SyncBatch attributes: records_created, records_updated, records_failed, errors
             return {
-                "synced": result.total_count,
-                "created": result.created_count,
-                "updated": result.updated_count,
-                "failed": result.failed_count,
-                "errors": [e.get("error", str(e)) for e in result.errors]
+                "synced": result.records_created + result.records_updated,
+                "created": result.records_created,
+                "updated": result.records_updated,
+                "failed": result.records_failed,
+                "errors": [str(e.get("error", e)) for e in result.errors]
             }
         except Exception as e:
             logger.error(f"User sync failed: {e}")
@@ -136,11 +137,11 @@ class OdooV3Adapter:
             # Execute full sync across all entity types
             results = await self._pipeline.sync_all(mode="full")
             
-            # Aggregate results
-            total_synced = sum(r.total_count for r in results.values())
-            total_created = sum(r.created_count for r in results.values())
-            total_updated = sum(r.updated_count for r in results.values())
-            total_failed = sum(r.failed_count for r in results.values())
+            # Aggregate results - SyncBatch has: records_created, records_updated, records_failed, errors
+            total_synced = sum(r.records_created + r.records_updated for r in results.values())
+            total_created = sum(r.records_created for r in results.values())
+            total_updated = sum(r.records_updated for r in results.values())
+            total_failed = sum(r.records_failed for r in results.values())
             
             all_errors = []
             for entity_type, result in results.items():
@@ -166,9 +167,9 @@ class OdooV3Adapter:
                 "errors": all_errors,
                 "entity_results": {
                     k: {
-                        "synced": v.total_count,
-                        "created": v.created_count,
-                        "updated": v.updated_count
+                        "synced": v.records_created + v.records_updated,
+                        "created": v.records_created,
+                        "updated": v.records_updated
                     }
                     for k, v in results.items()
                 }
