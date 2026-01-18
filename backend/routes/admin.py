@@ -534,9 +534,25 @@ async def approve_user(
         logger.error(f"Error enriching user from Odoo: {e}")
         odoo_match_status = f"error: {str(e)}"
     
+    # CRITICAL: Enforce workflow - Role and Department required before approval
+    
+    # Check if user has a role assigned
+    user_role = user.get("role")
+    if not user_role or user_role == "pending":
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot approve user without a role. Please assign a role first using PUT /admin/users/{user_id}"
+        )
+    
+    # Check if user has a department (recommended, warning only)
+    if not user.get("department_id") and not odoo_enrichment.get("odoo_department_id"):
+        logger.warning(f"Approving user {user_email} without department assignment")
+        # Don't block approval, but log warning
+    
     # Build update payload
     update_data = {
         "approval_status": "approved",
+        "is_active": True,  # IMPORTANT: Activate user on approval
         "updated_at": datetime.now(timezone.utc),
         "odoo_match_status": odoo_match_status,
         **odoo_enrichment
