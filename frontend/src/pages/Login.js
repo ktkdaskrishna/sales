@@ -86,9 +86,17 @@ const Login = () => {
         }),
       });
       
+      // FIXED: Check if response is ok before parsing JSON
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Microsoft login error:', errorText);
+        setError('Failed to complete Microsoft login');
+        return;
+      }
+      
       const data = await response.json();
       
-      if (response.ok && data.access_token) {
+      if (data.access_token) {
         loginWithToken(data.access_token, data.user);
         navigate('/dashboard');
       } else {
@@ -96,7 +104,7 @@ const Login = () => {
       }
     } catch (err) {
       console.error('Microsoft login completion error:', err);
-      setError('Failed to complete Microsoft login');
+      setError(err.message || 'Failed to complete Microsoft login');
     } finally {
       setMsLoading(false);
     }
