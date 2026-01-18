@@ -640,10 +640,19 @@ class OdooSyncPipelineService:
             
             logger.info(f"Data lake sync completed in {duration:.2f}s: {sum(synced_entities.values())} total records")
             
+            # CRITICAL: Sync deletions to CQRS projections
+            logger.info("Syncing deletions to CQRS views...")
+            from services.deletion_sync import sync_deletions_after_odoo_sync
+            
+            deletion_results = await sync_deletions_after_odoo_sync(self.db)
+            
+            logger.info(f"Deletion sync complete: {deletion_results.get('total_synced', 0)} records updated")
+            
             return {
                 "success": len(errors) == 0,
                 "message": f"Sync completed. Synced {sum(synced_entities.values())} records." if not errors else f"Sync completed with {len(errors)} error(s)",
                 "synced_entities": synced_entities,
+                "deletion_sync": deletion_results,  # NEW: Include deletion sync results
                 "errors": errors,
                 "duration_seconds": round(duration, 2)
             }
