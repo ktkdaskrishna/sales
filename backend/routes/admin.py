@@ -198,9 +198,27 @@ async def update_role(
 
 @router.delete("/roles/{role_id}")
 async def delete_role(role_id: str, token_data: dict = Depends(require_super_admin)):
-    """Delete a role"""
+    """Delete a role (if not system role and no users assigned)"""
     db = Database.get_db()
-
+    rbac = RBACService(db)
+    
+    role = await rbac.get_role_by_id(role_id)
+    if not role:
+        raise HTTPException(status_code=404, detail="Role not found")
+    
+    if role.get("is_system"):
+        raise HTTPException(status_code=400, detail="Cannot delete system roles")
+    
+    # Check if any users have this role
+    user_count = await db.users.count_documents({"role_id": role_id})
+    if user_count > 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot delete role: {user_count} users assigned to this role"
+        )
+    
+    success = await rbac.delete_role(role_id)
+    return {"message": "Role deleted successfully" if success else "Failed to delete role"}
 
 
 # ===================== WEBHOOK CONFIGURATION =====================
