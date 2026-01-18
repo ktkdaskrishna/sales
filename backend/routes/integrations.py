@@ -596,6 +596,46 @@ async def auto_map_fields(
     }
 
 
+
+@router.get("/odoo/data-lake-stats")
+async def get_odoo_data_lake_stats(
+    token_data: dict = Depends(require_role([UserRole.SUPER_ADMIN]))
+):
+    """Get Odoo-specific Data Lake stats for group settings."""
+    db = Database.get_db()
+    raw_collection = db[Database.RAW_ZONE]
+    canonical_collection = db[Database.CANONICAL_ZONE]
+    serving_collection = db[Database.SERVING_ZONE]
+
+    raw_total = await raw_collection.count_documents({"source": "odoo"})
+    canonical_total = await canonical_collection.count_documents({
+        "source_refs": {"$elemMatch": {"source": "odoo"}}
+    })
+    serving_total = await serving_collection.count_documents({"source": "odoo"})
+
+    entity_types = ["account", "opportunity", "activity", "invoice", "order", "user"]
+    entity_counts = {}
+    for entity_type in entity_types:
+        entity_counts[entity_type] = await serving_collection.count_documents({
+            "source": "odoo",
+            "entity_type": entity_type
+        })
+
+    groups = [
+        {"id": "crm", "name": "CRM Core", "entities": ["account", "opportunity", "activity"]},
+        {"id": "finance", "name": "Finance", "entities": ["invoice", "order"]},
+        {"id": "people", "name": "People", "entities": ["user"]},
+    ]
+
+    return {
+        "raw_zone": {"total_records": raw_total},
+        "canonical_zone": {"total_records": canonical_total},
+        "serving_zone": {"total_records": serving_total},
+        "entity_counts": entity_counts,
+        "groups": groups
+    }
+
+
 # ===================== SYNC ROUTES =====================
 
 @router.post("/sync/{integration_type}")
