@@ -443,6 +443,37 @@ const ConnectionTab = ({ config, onUpdate, onTest, testing, status }) => {
           >
             {testing ? <Loader2 className="w-4 h-4 animate-spin" /> : <TestTube className="w-4 h-4" />}
             Test
+          </button>
+        </div>
+      </div>
+
+      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-5">
+        <h4 className="font-semibold text-blue-900 flex items-center gap-2 mb-3">
+          <Key className="w-4 h-4" />
+          How to Get Your Odoo API Key
+        </h4>
+        <ol className="text-sm text-blue-700 space-y-2">
+          <li className="flex items-start gap-2">
+            <span className="w-5 h-5 rounded-full bg-blue-200 text-blue-800 text-xs flex items-center justify-center flex-shrink-0 mt-0.5">1</span>
+            Log in to your Odoo instance as Administrator
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="w-5 h-5 rounded-full bg-blue-200 text-blue-800 text-xs flex items-center justify-center flex-shrink-0 mt-0.5">2</span>
+            Go to <strong>Settings → Users & Companies → Users</strong>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="w-5 h-5 rounded-full bg-blue-200 text-blue-800 text-xs flex items-center justify-center flex-shrink-0 mt-0.5">3</span>
+            Select your user and click <strong>Account Security</strong> tab
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="w-5 h-5 rounded-full bg-blue-200 text-blue-800 text-xs flex items-center justify-center flex-shrink-0 mt-0.5">4</span>
+            Click <strong>New API Key</strong> and copy the generated key
+          </li>
+        </ol>
+      </div>
+    </div>
+  );
+};
 
 // ===================== WEBHOOK TAB =====================
 
