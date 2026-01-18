@@ -512,6 +512,7 @@ async def sync_all_from_odoo(
             synced_entities={},
             errors=[str(e)],
             duration_seconds=0
+        )
 
 
 
