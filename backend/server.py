@@ -36,29 +36,6 @@ async def lifespan(app: FastAPI):
         await rbac.initialize()
         logger.info("RBAC system initialized")
         
-        # Register Odoo routes now that DB is connected
-        try:
-            from services.auth.jwt_handler import get_current_user_from_token
-            
-            def require_role_wrapper(roles: List[str]):
-                async def dependency(token_data: dict = Depends(get_current_user_from_token)):
-                    db = Database.get_db()
-                    user = await db.users.find_one({"id": token_data["id"]}, {"is_super_admin": 1})
-                    if user and user.get("is_super_admin"):
-                        return token_data
-                    raise HTTPException(status_code=403, detail="Admin access required")
-                return dependency
-            
-            odoo_router = create_odoo_routes(
-                db=Database.get_db(),
-                get_current_user=get_current_user_from_token,
-                require_role=require_role_wrapper
-            )
-            api_router.include_router(odoo_router)
-            logger.info("✅ Odoo Integration routes registered")
-        except Exception as e:
-            logger.error(f"Failed to register Odoo routes: {e}", exc_info=True)
-        
         # Seed demo data if needed
         await seed_demo_data()
         
@@ -154,10 +131,10 @@ from api.v2_dashboard import router as v2_dashboard_router  # CQRS v2 API
 from api.v2_activities import router as v2_activities_router  # CQRS v2 Activities API
 from api.cqrs_sync_api import router as cqrs_sync_router  # CQRS sync endpoints
 
-# Import Odoo routes factory (will be instantiated after DB connection)
+# Import Odoo routes factory
 from odoo_routes import create_odoo_routes
 
-# Register routes
+# Register basic routes
 api_router.include_router(auth_router)
 api_router.include_router(data_lake_router)
 api_router.include_router(integrations_router)
