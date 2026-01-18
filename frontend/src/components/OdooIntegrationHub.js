@@ -121,7 +121,7 @@ const OdooIntegrationHub = () => {
 
   const fetchDataLakeStats = async () => {
     try {
-      const response = await api.get("/odoo/data-lake-stats");
+      const response = await api.get("/integrations/odoo/data-lake-stats");
       setDataLakeStats({
         raw: response.data?.raw_zone?.total_records || 0,
         canonical: response.data?.canonical_zone?.total_records || 0,
