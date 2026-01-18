@@ -662,6 +662,49 @@ async def preview_odoo_data(
         }
     except HTTPException:
         raise
+
+
+
+@router.put("/odoo/mappings/{mapping_id}/fields")
+async def update_odoo_field_mappings(
+    mapping_id: str,
+    field_mappings: List[Dict[str, Any]],
+    token_data: dict = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.ADMIN]))
+):
+    """
+    Update field mappings for a specific Odoo entity
+    
+    Called from Field Mapping tab when user clicks "Save Mappings"
+    """
+    db = Database.get_db()
+    
+    try:
+        # Get system config
+        sys_config = await db.system_config.find_one({"id": "system_config"})
+        if not sys_config or not sys_config.get("odoo_integration"):
+            raise HTTPException(status_code=404, detail="Odoo integration not configured")
+        
+        # Find the entity mapping
+        entity_mappings = sys_config["odoo_integration"].get("entity_mappings", [])
+        mapping_idx = next((i for i, m in enumerate(entity_mappings) if m.get("id") == mapping_id), None)
+        
+        if mapping_idx is None:
+            raise HTTPException(status_code=404, detail=f"Mapping {mapping_id} not found")
+        
+        # Update field mappings
+        update_path = f"odoo_integration.entity_mappings.{mapping_idx}.field_mappings"
+        await db.system_config.update_one(
+            {"id": "system_config"},
+            {"$set": {update_path: field_mappings}}
+        )
+        
+        return {"message": "Field mappings updated successfully", "count": len(field_mappings)}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to update field mappings: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
     except Exception as e:
         logger.error(f"Preview failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
