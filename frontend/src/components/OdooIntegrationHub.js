@@ -457,7 +457,17 @@ const ConnectionTab = ({ config, onUpdate, onTest, testing, status }) => {
             Save & Connect
           </button>
           <button
-            onClick={onTest}
+            onClick={() => {
+              if (!formData.url || !formData.database || !formData.username || !formData.api_key) {
+                toast.error("Please fill in all fields to test connection");
+                return;
+              }
+              const normalizedData = {
+                ...formData,
+                url: normalizeUrl(formData.url),
+              };
+              onTest(normalizedData);
+            }}
             disabled={testing || saving}
             className="btn-secondary flex items-center gap-2 px-6"
             data-testid="test-connection-btn"
