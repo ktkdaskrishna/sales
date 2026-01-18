@@ -2,9 +2,10 @@
 Sales Intelligence Platform - Main Server
 Enterprise-grade FastAPI application with modular architecture
 """
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+from typing import List
 import logging
 import os
 
