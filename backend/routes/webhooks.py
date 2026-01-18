@@ -49,31 +49,43 @@ async def odoo_webhook(
     """
     Receive real-time updates from Odoo.
     
+    PRODUCTION-GRADE WEBHOOK HANDLING:
+    - Validates X-Odoo-Webhook-Secret (hard-fails on invalid)
+    - Soft-deletes in data_lake_serving (preserves audit trail)
+    - Updates CQRS projections immediately (sub-second UI consistency)
+    - Handles ID normalization (int + string)
+    - Structured logging with metrics
+    
     Configure in Odoo:
     1. Go to Settings > Technical > Automation > Automated Actions
-    2. Create action for each model (crm.lead, res.partner, etc.)
-    3. Set trigger: On Creation, On Update
-    4. Action: Execute Python Code
-    5. Code: 
+    2. Create action for unlink/delete:
        ```python
        import requests
        requests.post(
            'YOUR_URL/api/webhooks/odoo',
            json={
-               'model': model._name,
-               'action': 'write' if not record._context.get('create') else 'create',
-               'record_ids': record.ids,
-               'data': record.read()[0] if len(record) == 1 else None
+               'model': env.context.get('active_model'),
+               'action': 'unlink',
+               'record_ids': env.context.get('active_ids', [])
            },
            headers={'X-Odoo-Webhook-Secret': 'your-secret-key'}
        )
        ```
     """
-    logger.info(f"Received Odoo webhook: {payload.model} - {payload.action} - {payload.record_ids}")
+    start_time = datetime.now(timezone.utc)
     
-    # Verify webhook secret (optional but recommended)
+    logger.info(f"Webhook received: {payload.model} | {payload.action} | IDs: {payload.record_ids}")
+    
+    # CRITICAL: Verify webhook secret (HARD FAIL on invalid)
     webhook_secret = request.headers.get("X-Odoo-Webhook-Secret")
-    expected_secret = settings.ODOO_API_KEY  # Reuse API key as webhook secret
+    expected_secret = settings.ODOO_API_KEY
+    
+    if not webhook_secret or webhook_secret != expected_secret:
+        logger.error(f"Invalid webhook secret from {request.client.host}")
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or missing X-Odoo-Webhook-Secret header"
+        )
     
     # Map Odoo model to entity type
     model_to_entity = {
