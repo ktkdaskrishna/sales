@@ -677,6 +677,21 @@ const AdminPanel = () => {
                             )}
                           </td>
                           <td className="px-4 py-3">
+                            <select
+                              value={u.commission_template_id || ''}
+                              onChange={(e) => assignCommissionTemplate(u.id, e.target.value)}
+                              className="input text-sm py-1 min-w-[120px]"
+                              disabled={u.is_super_admin}
+                            >
+                              <option value="">Default (1%)</option>
+                              {commissionTemplates.map(t => (
+                                <option key={t.id} value={t.id}>
+                                  {t.name} ({t.template_type === 'flat' ? `${(t.base_rate * 100).toFixed(1)}%` : 'Tiered'})
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+                          <td className="px-4 py-3">
                             {u.approval_status === 'pending' ? (
                               <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
                                 Pending
