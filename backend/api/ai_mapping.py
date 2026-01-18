@@ -113,14 +113,10 @@ async def get_ai_mapping_suggestions(
     source_fields: List[SourceField],
     target_fields: List[TargetField]
 ) -> List[MappingSuggestion]:
-    """Use AI to suggest field mappings"""
-    
-    api_key = os.environ.get("EMERGENT_LLM_KEY")
-    if not api_key:
-        raise HTTPException(status_code=500, detail="LLM API key not configured")
+    """Use AI to suggest field mappings - Now uses centralized LLM Service"""
     
     try:
-        from emergentintegrations.llm.chat import LlmChat, UserMessage
+        from services.llm_service import LLMService
         
         # Build the prompt
         source_fields_str = "\n".join([
@@ -155,14 +151,13 @@ Consider:
 
 Return ONLY valid JSON array, no other text."""
 
-        chat = LlmChat(
-            api_key=api_key,
-            session_id=f"mapping-{source_name}-{entity_type}",
-            system_message="You are a data integration expert that analyzes field schemas and suggests intelligent mappings. Always respond with valid JSON only."
-        ).with_model("openai", "gpt-4o")
-        
-        user_message = UserMessage(text=prompt)
-        response = await chat.send_message(user_message)
+        # Call centralized LLM Service
+        response = await LLMService.call_llm(
+            feature="field_mapping",
+            prompt=prompt,
+            temperature=0.3,
+            max_tokens=2000
+        )
         
         # Parse the response
         # Clean up response - remove markdown code blocks if present
