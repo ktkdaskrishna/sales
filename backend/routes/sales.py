@@ -658,21 +658,7 @@ async def calculate_blue_sheet_probability(
         if not analysis.coach_identified:
             recommendations.append("Develop a Coach inside the organization who can guide your strategy")
         if analysis.budget_not_confirmed:
-            Blue Sheet Analysis:
-            - Economic Buyer Identified: {analysis.economic_buyer_identified}
-            - Economic Buyer Favorable: {analysis.economic_buyer_favorable}
-            - Coach Engaged: {analysis.coach_engaged}
-            - Budget Confirmed: {not analysis.budget_not_confirmed}
-            - Competition Preferred: {analysis.competition_preferred}
-            - Clear Business Results: {analysis.clear_business_results}
-            - Mutual Action Plan: {analysis.mutual_action_plan}
-            
-            For a cybersecurity consulting firm (services: MSSP, Application Security, Network Security, GRC),
-            provide 3 specific actionable recommendations to improve win probability. Be concise.
-            """
-            
-            chat = LlmChat(
-                api_key=api_key,
+            recommendations.append("Confirm budget availability and timeline with decision makers")
                 session_id=f"bluesheet-{opp_id}-{datetime.now().timestamp()}",
                 system_message="You are a sales strategy expert specializing in B2B enterprise cybersecurity sales using Miller Heiman Blue Sheet methodology. Provide brief, actionable recommendations."
             ).with_model(model_provider, model_name)
