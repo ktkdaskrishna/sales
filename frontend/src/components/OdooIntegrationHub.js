@@ -693,6 +693,7 @@ const SimpleFieldMappingTab = ({ config, onRefresh }) => {
     "res.partner": { icon: Building2, color: "purple", label: "Contacts & Companies" },
     "crm.lead": { icon: Zap, color: "blue", label: "Opportunities" },
     "mail.activity": { icon: Calendar, color: "amber", label: "Activities" },
+    "account.move": { icon: Database, color: "emerald", label: "Invoices" },
   };
 
   useEffect(() => {
