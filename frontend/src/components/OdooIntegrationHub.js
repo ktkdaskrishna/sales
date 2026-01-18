@@ -73,7 +73,7 @@ const OdooIntegrationHub = () => {
       if (response.data.connection?.is_connected) {
         setConnectionStatus({ 
           success: true, 
-          message = `Connected to Odoo ${response.data.connection.odoo_version}` 
+          message: `Connected to Odoo ${response.data.connection.odoo_version}` 
         });
       }
     } catch (error) {
