@@ -463,3 +463,71 @@ class OdooUserMapper(BaseMapper):
         elif isinstance(value, int):
             return value
         return None
+
+
+
+class OdooInvoiceMapper(BaseMapper):
+    """Maps Odoo account.move (invoices) to canonical invoice format"""
+    
+    def __init__(self, field_mappings: Optional[Dict[str, str]] = None):
+        super().__init__(IntegrationSource.ODOO, field_mappings)
+    
+    def map_to_canonical(self, raw_record: RawRecord) -> Dict[str, Any]:
+        """Transform raw Odoo invoice to canonical format"""
+        data = raw_record.raw_data
+        
+        # Extract many2one fields (Odoo returns [id, "name"] tuples)
+        partner_id = self._extract_m2o_id(data.get('partner_id'))
+        partner_name = self._extract_m2o_name(data.get('partner_id'))
+        user_id = self._extract_m2o_id(data.get('invoice_user_id'))
+        salesperson_name = self._extract_m2o_name(data.get('invoice_user_id'))
+        
+        # Map Odoo invoice states to standard statuses
+        state_mapping = {
+            'draft': 'draft',
+            'posted': 'posted',
+            'cancel': 'cancelled',
+            'paid': 'paid'
+        }
+        status = state_mapping.get(data.get('state', 'draft'), 'draft')
+        
+        # Build canonical invoice (dict format - no CanonicalInvoice model yet)
+        invoice = {
+            'source_id': str(data.get('id')),  # CRITICAL: Always string for MongoDB
+            'invoice_number': data.get('name', ''),
+            'customer_id': str(partner_id) if partner_id else None,
+            'customer_name': partner_name,
+            'total_amount': float(data.get('amount_total', 0)),
+            'amount_due': float(data.get('amount_residual', 0)),
+            'status': status,
+            'invoice_date': data.get('invoice_date'),
+            'due_date': data.get('invoice_date_due'),
+            'salesperson_id': str(user_id) if user_id else None,
+            'salesperson_name': salesperson_name,
+            'currency': self._extract_m2o_name(data.get('currency_id')) or 'USD',
+            'payment_state': data.get('payment_state'),
+            'move_type': data.get('move_type', 'out_invoice'),
+            
+            # Metadata
+            'created_at': data.get('create_date'),
+            'updated_at': data.get('write_date'),
+        }
+        
+        return invoice
+    
+    def _extract_m2o_id(self, value: Any) -> Optional[int]:
+        """Extract ID from many2one field [id, name]"""
+        if isinstance(value, (list, tuple)) and len(value) >= 1:
+            return value[0]
+        elif isinstance(value, int):
+            return value
+        return None
+    
+    def _extract_m2o_name(self, value: Any) -> Optional[str]:
+        """Extract name from many2one field [id, name]"""
+        if isinstance(value, (list, tuple)) and len(value) >= 2:
+            return str(value[1])
+        elif isinstance(value, str):
+            return value
+        return None
+

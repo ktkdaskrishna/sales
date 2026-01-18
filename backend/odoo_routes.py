@@ -893,8 +893,10 @@ def create_odoo_routes(db: AsyncIOMotorDatabase, get_current_user, require_role)
             if source == "platform":
                 return {"status": "skipped", "reason": "Loop prevention - originated from platform"}
             
-            if not model or not record_id:
+            if not model or record_id is None:
                 raise HTTPException(status_code=400, detail="Missing model or record_id")
+
+            normalized_record_id = str(record_id)  # CRITICAL: Always string for MongoDB consistency
             
             # Find the mapping for this model
             config = await get_odoo_config()
@@ -915,7 +917,7 @@ def create_odoo_routes(db: AsyncIOMotorDatabase, get_current_user, require_role)
             
             if event == "delete":
                 # Delete the local record
-                result = await collection.delete_one({"odoo_id": record_id})
+                result = await collection.delete_one({"odoo_id": normalized_record_id})
                 return {
                     "status": "success",
                     "event": "delete",
@@ -927,26 +929,26 @@ def create_odoo_routes(db: AsyncIOMotorDatabase, get_current_user, require_role)
             engine = OdooSyncEngine(db, None)
             
             # Add id to data for mapping
-            data["id"] = record_id
+            data["id"] = normalized_record_id
             local_record = await engine.map_record(data, mapping)
             
             # Check if record exists
-            existing = await collection.find_one({"odoo_id": record_id})
+            existing = await collection.find_one({"odoo_id": normalized_record_id})
             
             if existing:
                 # Update
                 local_record["updated_at"] = datetime.now(timezone.utc)
                 await collection.update_one(
-                    {"odoo_id": record_id},
+                    {"odoo_id": normalized_record_id},
                     {"$set": local_record}
                 )
-                return {"status": "success", "event": "update", "odoo_id": record_id}
+                return {"status": "success", "event": "update", "odoo_id": normalized_record_id}
             else:
                 # Create
                 local_record["created_at"] = datetime.now(timezone.utc)
                 local_record["updated_at"] = datetime.now(timezone.utc)
                 await collection.insert_one(local_record)
-                return {"status": "success", "event": "create", "odoo_id": record_id}
+                return {"status": "success", "event": "create", "odoo_id": normalized_record_id}
                 
         except Exception as e:
             # Log the error but don't fail - webhooks should be resilient
