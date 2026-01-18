@@ -521,7 +521,7 @@ async def sync_all_from_odoo(
 async def sync_odoo_entity(
     mapping_id: str,
     token_data: dict = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.ADMIN]))
-)::
+):
     """
     Sync specific entity by mapping ID - Using v3.1 pipeline
     
