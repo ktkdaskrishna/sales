@@ -51,6 +51,42 @@ const O365_ENTITY_TYPES = [
 
 const Integrations = () => {
   const navigate = useNavigate();
+  
+  // Redirect to Admin Panel - this page is deprecated
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      navigate('/admin?tab=integrations');
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [navigate]);
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-8">
+      <div className="max-w-2xl w-full bg-white rounded-2xl shadow-xl border border-slate-200 p-8 text-center">
+        <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
+          <AlertCircle className="w-8 h-8 text-amber-600" />
+        </div>
+        <h2 className="text-2xl font-bold text-slate-900 mb-3">Page Moved</h2>
+        <p className="text-slate-600 mb-6">
+          Integrations management has been moved to the Admin Panel for better organization.
+        </p>
+        <p className="text-sm text-slate-500 mb-6">
+          You will be redirected automatically in 5 seconds...
+        </p>
+        <Button 
+          onClick={() => navigate('/admin?tab=integrations')}
+          className="btn-primary"
+        >
+          <ChevronRight className="w-4 h-4 mr-2" />
+          Go to Admin Panel → Integrations
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+const IntegrationsOLD = () => {
+  const navigate = useNavigate();
   const [integrations, setIntegrations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedIntegration, setSelectedIntegration] = useState(null);
