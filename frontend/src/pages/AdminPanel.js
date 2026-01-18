@@ -44,6 +44,11 @@ const AdminPanel = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [syncingAzure, setSyncingAzure] = useState(false);
   const [expandedRole, setExpandedRole] = useState(null);
+  
+  // Webhook & Sync states
+  const [webhookStatus, setWebhookStatus] = useState(null);
+  const [syncConfig, setSyncConfig] = useState(null);
+  const [syncing, setSyncing] = useState(false);
 
   // Check super admin access
   useEffect(() => {
