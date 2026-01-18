@@ -109,12 +109,25 @@ const OdooIntegrationHub = () => {
 
   const handleUpdateConnection = async (connectionData) => {
     try {
-      await api.post("/integrations/odoo/configure", connectionData);
+      // Add required enabled_entities field for backend validation
+      const payload = {
+        ...connectionData,
+        enabled_entities: ["account", "opportunity"]  // Default entities
+      };
+      await api.post("/integrations/odoo/configure", payload);
       toast.success("Connection settings saved");
       fetchConfig();
       return true;
     } catch (error) {
-      toast.error("Failed to save connection settings");
+      // Better error handling for Pydantic validation errors
+      const errorMsg = error.response?.data?.detail;
+      if (Array.isArray(errorMsg)) {
+        // Pydantic validation errors
+        const messages = errorMsg.map(e => `${e.loc?.join('.')}: ${e.msg}`).join(', ');
+        toast.error(`Validation error: ${messages}`);
+      } else {
+        toast.error(errorMsg || "Failed to save connection settings");
+      }
       return false;
     }
   };
