@@ -68,7 +68,7 @@ const OdooIntegrationHub = () => {
 
   const fetchConfig = async () => {
     try {
-      const response = await api.get("/odoo/config");
+      const response = await api.get("/integrations/odoo");
       setConfig(response.data);
       if (response.data.connection?.is_connected) {
         setConnectionStatus({ 
@@ -88,7 +88,7 @@ const OdooIntegrationHub = () => {
     setTestingConnection(true);
     setConnectionStatus(null);
     try {
-      const response = await api.post("/odoo/test-connection");
+      const response = await api.post("/integrations/odoo/test");
       setConnectionStatus(response.data);
       if (response.data.success) {
         toast.success("Connection successful!");
@@ -109,7 +109,7 @@ const OdooIntegrationHub = () => {
 
   const handleUpdateConnection = async (connectionData) => {
     try {
-      await api.put("/odoo/config/connection", connectionData);
+      await api.post("/integrations/odoo/configure", connectionData);
       toast.success("Connection settings saved");
       fetchConfig();
       return true;
