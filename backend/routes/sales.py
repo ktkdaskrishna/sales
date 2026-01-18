@@ -836,7 +836,7 @@ async def calculate_commission(db, user_id: str, revenue: float, attainment: flo
         return revenue * 0.05
     
     if template["template_type"] == "flat":
-        return revenue * template.get("base_rate", 0.05)
+        return revenue * template.get("base_rate", 0.01)  # Default 1%
     
     elif template["template_type"] == "tiered_attainment":
         # Find applicable tier
