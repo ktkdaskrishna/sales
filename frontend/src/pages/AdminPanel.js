@@ -260,6 +260,31 @@ const AdminPanel = () => {
     }
   };
 
+  // ===================== COMMISSION TEMPLATE ASSIGNMENT =====================
+  const assignCommissionTemplate = async (userId, templateId) => {
+    if (!token) return;
+    try {
+      const res = await fetch(`${API_URL}/api/sales/users/${userId}/commission-template`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ template_id: templateId })
+      });
+
+      if (res.ok) {
+        setSuccess('Commission template assigned successfully');
+        fetchData();
+      } else {
+        const data = await res.json();
+        setError(data.detail || 'Failed to assign commission template');
+      }
+    } catch (err) {
+      setError('Failed to assign commission template');
+    }
+  };
+
   // ===================== DEPARTMENT CRUD =====================
   const saveDepartment = async (deptData) => {
     try {
