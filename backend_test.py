@@ -876,13 +876,14 @@ def test_odoo_config_save_and_admin_features():
         "url": "https://test.odoo.com",
         "database": "testdb",
         "username": "admin@test.com",
-        "api_key": "test-api-key-123"
+        "api_key": "test-api-key-123",
+        "enabled_entities": ["account", "opportunity"]
     }
     
     success, response = tester.run_test(
-        "PUT /api/odoo/config/connection",
-        "PUT",
-        "odoo/config/connection",
+        "POST /api/integrations/odoo/configure",
+        "POST",
+        "integrations/odoo/configure",
         200,
         data=odoo_config
     )
@@ -892,16 +893,16 @@ def test_odoo_config_save_and_admin_features():
         print("   ✅ No 'Objects are not valid as React child' error")
         test_results["odoo_save"] = True
     else:
-        print("   ❌ CRITICAL: Odoo config save endpoint not working (404)")
-        print("   ℹ️  This indicates the Odoo routes are not properly registered")
+        print("   ❌ CRITICAL: Odoo config save endpoint failed")
     
     # Test 2: Test connection (should fail gracefully with invalid credentials)
     print("\n🔍 Test 2: Test Odoo Connection (Expected to fail gracefully)")
     success, response = tester.run_test(
-        "POST /api/odoo/test-connection",
+        "POST /api/integrations/odoo/test",
         "POST",
-        "odoo/test-connection",
-        200  # Should return 200 with success=false
+        "integrations/odoo/test",
+        200,  # Should return 200 with success=false
+        data=odoo_config
     )
     
     if success:
